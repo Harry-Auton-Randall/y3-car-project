@@ -24,7 +24,11 @@ public class CarMovement : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
 
-        wheelColliders = GetComponentsInChildren<WheelCollider>();
+        wheelColliders = new WheelCollider[4];
+        wheelColliders[0] = transform.Find("WheelFrontLeftCollider").GetComponent<WheelCollider>();
+        wheelColliders[1] = transform.Find("WheelFrontRightCollider").GetComponent<WheelCollider>();
+        wheelColliders[2] = transform.Find("WheelBackLeftCollider").GetComponent<WheelCollider>();
+        wheelColliders[3] = transform.Find("WheelBackRightCollider").GetComponent<WheelCollider>();
 
         wheelModels = new Transform[4];
         wheelModels[0] = transform.Find("WheelFrontLeft");
