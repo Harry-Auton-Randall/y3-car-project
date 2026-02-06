@@ -267,6 +267,7 @@ GameObject:
   - component: {fileID: 390679511}
   - component: {fileID: 390679510}
   - component: {fileID: 390679512}
+  - component: {fileID: 390679513}
   m_Layer: 0
   m_Name: PlayerCar
   m_TagString: Untagged
@@ -341,11 +342,26 @@ MonoBehaviour:
   torqueMotor: 1000
   torqueBrake: 1000
   steerRange: 30
+  maxSpeed: 90
+  maxSpeedReverse: 15
   motorIn: 0
   steerIn: 0
   currentSpeed: 0
+  currentSpeedFraction: 0
   wheelColliders: []
   wheelModels: []
+--- !u!114 &390679513
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 390679509}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df152a64ce8e5eb459081943fbb15e61, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CarControlPlayer
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0

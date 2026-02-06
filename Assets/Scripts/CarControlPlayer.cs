@@ -1,21 +1,22 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
+using UnityEngine.InputSystem; // 1
 
 public class CarControlPlayer : MonoBehaviour
 {
+    // 2
     CarMovement carMovement;
+    InputAction motorAction, steerAction;
 
-    void Awake()
+    void Awake() // 3
     {
         carMovement = GetComponent<CarMovement>();
+        motorAction = InputSystem.actions.FindAction("Motor");
+        steerAction = InputSystem.actions.FindAction("Steer");
     }
 
-    void OnAccel(InputValue value)
+    void Update() // 4
     {
-        carMovement.SetAccelIn(value.Get<float>());
-    }
-    void OnSteer(InputValue value)
-    {
-        carMovement.SetSteerIn(value.Get<float>());
+        carMovement.SetMotorIn(motorAction.ReadValue<float>());
+        carMovement.SetSteerIn(steerAction.ReadValue<float>());
     }
 }

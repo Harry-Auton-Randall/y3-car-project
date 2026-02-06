@@ -4,12 +4,12 @@
     "maps": [
         {
             "name": "Car",
-            "id": "cb7e5c57-9a89-4724-9438-e9d69e8d176a",
+            "id": "7cdbb2e7-3084-4821-bd7e-e9bd16aa16a0",
             "actions": [
                 {
-                    "name": "Accel",
+                    "name": "Motor",
                     "type": "Value",
-                    "id": "63dbfa36-739e-4f40-9e4c-443ac9b38f2d",
+                    "id": "1701c5ab-4186-4318-b5b5-2eab60530a5a",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -18,7 +18,7 @@
                 {
                     "name": "Steer",
                     "type": "Value",
-                    "id": "12fc3417-9e11-4b54-be24-20f823c861a3",
+                    "id": "db8bafd2-780b-4416-9dd3-8c37c640526d",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -28,40 +28,40 @@
             "bindings": [
                 {
                     "name": "1D Axis",
-                    "id": "a52a6c71-94e4-4cb7-8489-32783879970f",
+                    "id": "321927d1-e321-40dd-81ad-ecf005bf0008",
                     "path": "1DAxis",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Accel",
+                    "action": "Motor",
                     "isComposite": true,
                     "isPartOfComposite": false
                 },
                 {
                     "name": "negative",
-                    "id": "6d10db4a-c4f0-4418-bd28-b89a2c5c274f",
+                    "id": "c2a4c75b-cfb2-4c6d-b92f-055fb812d55a",
                     "path": "<Keyboard>/s",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Accel",
+                    "action": "Motor",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
                 {
                     "name": "positive",
-                    "id": "ca2a5e56-2595-4379-9e23-930e6567e67f",
+                    "id": "79dc09ab-4e06-4cfb-bc8b-e7307db8228f",
                     "path": "<Keyboard>/w",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Accel",
+                    "action": "Motor",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
                 {
                     "name": "1D Axis",
-                    "id": "aa377ff2-e0ad-4706-ab4b-85f346c6e350",
+                    "id": "5d2bad60-3046-46c9-890e-3f73a287988f",
                     "path": "1DAxis",
                     "interactions": "",
                     "processors": "",
@@ -72,7 +72,7 @@
                 },
                 {
                     "name": "negative",
-                    "id": "d192c3cf-4b5f-4ab4-9749-a7d699b989c0",
+                    "id": "29e34298-74ec-4e50-bc4a-8c3aa975f381",
                     "path": "<Keyboard>/a",
                     "interactions": "",
                     "processors": "",
@@ -83,7 +83,7 @@
                 },
                 {
                     "name": "positive",
-                    "id": "ee035edb-445f-4cae-97b2-0419612472c7",
+                    "id": "d0042af8-5446-49fc-aba6-fc9a7ee5e282",
                     "path": "<Keyboard>/d",
                     "interactions": "",
                     "processors": "",
