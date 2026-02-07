@@ -68,7 +68,7 @@ public class CarMovement : MonoBehaviour
         {
             currentSpeedFraction = (currentSpeed / maxSpeedReverse) * -1;
         }
-        currentSpeedFraction = 1 - Mathf.Clamp(currentSpeedFraction, 0f, 1f);
+        currentSpeedFraction = 1 - Mathf.Pow(Mathf.Clamp(currentSpeedFraction, 0f, 1f), 1.5f);
 
 
         //Steers front wheels
@@ -102,6 +102,5 @@ public class CarMovement : MonoBehaviour
             wheelModels[i].transform.rotation = wheelRot;
             wheelModels[i].transform.Rotate(0, 0, 90);
         }
-
     }
 }
