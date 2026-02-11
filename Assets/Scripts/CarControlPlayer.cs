@@ -1,22 +1,32 @@
 using UnityEngine;
-using UnityEngine.InputSystem; // 1
+using UnityEngine.InputSystem;
 
 public class CarControlPlayer : MonoBehaviour
 {
-    // 2
     CarMovement carMovement;
-    InputAction motorAction, steerAction;
+    CameraMovement cameraMovement;
+    InputAction motorAction, steerAction, camRotAction;
+    public Vector2 camAngle;
 
-    void Awake() // 3
+    void Awake()
     {
         carMovement = GetComponent<CarMovement>();
+        cameraMovement = GetComponent<CameraMovement>();
         motorAction = InputSystem.actions.FindAction("Motor");
         steerAction = InputSystem.actions.FindAction("Steer");
+        camRotAction = InputSystem.actions.FindAction("CameraRotate");
     }
 
-    void Update() // 4
+    void Update()
     {
         carMovement.SetMotorIn(motorAction.ReadValue<float>());
         carMovement.SetSteerIn(steerAction.ReadValue<float>());
+
+        camAngle = camRotAction.ReadValue<Vector2>();
+        if (camAngle.x == 0f && camAngle.y == 0f)
+        {
+            camAngle.y = 1;
+        }
+        cameraMovement.SetCamRotIn(Mathf.Atan2(camAngle.x, camAngle.y) * Mathf.Rad2Deg);
     }
 }
