@@ -12,14 +12,14 @@ public class CarMovement : MonoBehaviour
 
     //Current variables
     public float motorIn, steerIn;
-    public float currentSpeed;
+    float currentSpeed;
 
-    public float currentSpeedFraction; 
+    float currentSpeedFraction; 
 
     //References to components/children
     Rigidbody rb;
-    public WheelCollider[] wheelColliders;
-    public Transform[] wheelModels;
+    WheelCollider[] wheelColliders;
+    Transform[] wheelModels;
 
     //For the wheels
     Vector3 wheelPos;

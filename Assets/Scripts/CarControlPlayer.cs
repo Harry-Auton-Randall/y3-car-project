@@ -6,7 +6,7 @@ public class CarControlPlayer : MonoBehaviour
     CarMovement carMovement;
     CameraMovement cameraMovement;
     InputAction motorAction, steerAction, camRotAction;
-    public Vector2 camAngle;
+    Vector2 camAngle;
 
     void Awake()
     {

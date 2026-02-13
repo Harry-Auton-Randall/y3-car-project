@@ -2,14 +2,15 @@ using UnityEngine;
 
 public class CameraMovement : MonoBehaviour
 {
-    public Vector3 moveDir;
-    public float rbRotY;
+    Vector3 moveDir;
+    float rbRotY;
 
-    public float camBase0RotX, camBase0RotY;
-    public Quaternion camBase2Rot;
+    float camBase0RotX, camBase0RotY;
+    Quaternion camBaseRot;
     
     public float camRotIn = 0f;
-    public float camRotSpeed = 0.3f;
+    public float camRotSpeed = 18.0f;
+    float camRotDist;
 
     Rigidbody rb;
     Transform camBase, camBase0, camBase1;
@@ -67,13 +68,14 @@ public class CameraMovement : MonoBehaviour
         camBase0RotY = camBase0.eulerAngles.y;
         camBase1.localRotation = Quaternion.Euler(0, (camBase0RotY * -1) + camRotIn + rbRotY, 0);
 
-        //Rotates camBase2Rot gradually towards camBase1
-        camBase2Rot = Quaternion.Lerp(camBase2Rot, camBase1.rotation, camRotSpeed);
+        //Rotates camBaseRot gradually towards camBase1
+        camRotDist = 1.0f - Mathf.Exp(camRotSpeed * -1 * Time.fixedDeltaTime);
+        camBaseRot = Quaternion.Lerp(camBaseRot, camBase1.rotation, camRotDist);
     }
     void Update()
     {
-        //Sets camBase2's rotation to camBase2Rot on update instead of fixedUpdate, also resets z rotation
-        camBase.rotation = camBase2Rot;
+        //Sets camBase's rotation to camBaseRot on Update instead of fixedUpdate, also resets z rotation
+        camBase.rotation = camBaseRot;
         camBase.rotation = Quaternion.Euler(camBase.eulerAngles.x, camBase.eulerAngles.y, 0);
     }
 }
