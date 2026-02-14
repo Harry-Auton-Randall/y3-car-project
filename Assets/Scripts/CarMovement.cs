@@ -6,15 +6,20 @@ public class CarMovement : MonoBehaviour
     public float torqueMotor = 1000.0f;
     public float torqueBrake = 1000.0f;
     public float steerRange = 30.0f;
+    public float steerRangeMin = 0.3f;
 
     public float maxSpeed = 90.0f;
     public float maxSpeedReverse = 15.0f;
+
+    public Vector3 resetPosition = new Vector3(0, 3, 0);
+    public Quaternion resetRotation = Quaternion.identity;
 
     //Current variables
     public float motorIn, steerIn;
     float currentSpeed;
 
-    float currentSpeedFraction; 
+    float currentSpeedFraction;
+    float steerRangeFraction;
 
     //References to components/children
     Rigidbody rb;
@@ -51,6 +56,20 @@ public class CarMovement : MonoBehaviour
         steerIn = value;
     }
 
+    public void ResetPosition()
+    {
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+
+        transform.position = resetPosition;
+        transform.rotation = resetRotation;
+
+        for (int i = 0; i < wheelColliders.Length; i++)
+        {
+            wheelColliders[i].rotationSpeed = 0f;
+        }
+    }
+
     void FixedUpdate()
     {
         //Finds forward speed
@@ -70,10 +89,12 @@ public class CarMovement : MonoBehaviour
         }
         currentSpeedFraction = 1 - Mathf.Pow(Mathf.Clamp(currentSpeedFraction, 0f, 1f), 1.5f);
 
+        //Finds steerRangeFraction
+        steerRangeFraction = 1 - Mathf.Lerp(0, (1 - steerRangeMin), (currentSpeed / maxSpeed));
 
         //Steers front wheels
-        wheelColliders[0].steerAngle = steerIn * steerRange;
-        wheelColliders[1].steerAngle = steerIn * steerRange;
+        wheelColliders[0].steerAngle = steerIn * steerRange * steerRangeFraction;
+        wheelColliders[1].steerAngle = steerIn * steerRange * steerRangeFraction;
 
         //checks if desired direction is opposite to current direction, and that neither current speed or motorIn are 0
         //If true, cause braking instead of accelerating

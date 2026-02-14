@@ -5,16 +5,40 @@ public class CarControlPlayer : MonoBehaviour
 {
     CarMovement carMovement;
     CameraMovement cameraMovement;
-    InputAction motorAction, steerAction, camRotAction;
+
+    InputActionMap carActions;
+
+    InputAction motorAction, steerAction, resetPosAction;
+    InputAction camRotAction;
     Vector2 camAngle;
 
     void Awake()
     {
         carMovement = GetComponent<CarMovement>();
         cameraMovement = GetComponent<CameraMovement>();
-        motorAction = InputSystem.actions.FindAction("Motor");
-        steerAction = InputSystem.actions.FindAction("Steer");
-        camRotAction = InputSystem.actions.FindAction("CameraRotate");
+
+        carActions = InputSystem.actions.FindActionMap("Car");
+
+        motorAction = carActions.FindAction("Motor");
+        steerAction = carActions.FindAction("Steer");
+        resetPosAction = carActions.FindAction("ResetPosition");
+        camRotAction = carActions.FindAction("CameraRotate");
+    }
+
+    void OnEnable()
+    {
+        carActions.Enable();
+        resetPosAction.performed += OnResetPos;
+    }
+    void OnDisable()
+    {
+        carActions.Disable();
+        resetPosAction.performed -= OnResetPos;
+    }
+
+    void OnResetPos(InputAction.CallbackContext context)
+    {
+        carMovement.ResetPosition();
     }
 
     void Update()
