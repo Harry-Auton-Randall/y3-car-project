@@ -11,6 +11,8 @@ public class CarMovement : MonoBehaviour
     public float maxSpeed = 90.0f;
     public float maxSpeedReverse = 15.0f;
 
+    public Collider currentWaypoint;
+    public Collider[] nextWaypoints; //NEW
     public Vector3 resetPosition = new Vector3(0, 3, 0);
     public Quaternion resetRotation = Quaternion.identity;
 
@@ -45,6 +47,25 @@ public class CarMovement : MonoBehaviour
         wheelModels[1] = transform.Find("WheelFrontRight");
         wheelModels[2] = transform.Find("WheelBackLeft");
         wheelModels[3] = transform.Find("WheelBackRight");
+
+        SetStartPosition(GameObject.Find("/Waypoints/StartWaypoint").GetComponent<Collider>()); //TEMPORARY
+    }
+
+    void SetStartPosition(Collider startPosition)
+    {
+        currentWaypoint = startPosition;
+        transform.position = new Vector3(currentWaypoint.transform.position.x, currentWaypoint.transform.position.y + 0.575f, currentWaypoint.transform.position.z);
+        transform.rotation = currentWaypoint.transform.rotation;
+        UpdateWaypoint(currentWaypoint);
+    }
+
+    void UpdateWaypoint(Collider hitWaypoint)
+    {
+        currentWaypoint = hitWaypoint;
+        resetPosition = currentWaypoint.transform.position;
+        resetPosition.y += 3;
+        resetRotation = currentWaypoint.transform.rotation;
+        this.nextWaypoints = currentWaypoint.GetComponent<Waypoint>().nextWaypoints;
     }
 
     public void SetMotorIn(float value)
@@ -68,6 +89,8 @@ public class CarMovement : MonoBehaviour
         {
             wheelColliders[i].rotationSpeed = 0f;
         }
+
+        UpdateWaypoint(currentWaypoint.GetComponent<Waypoint>().nextWaypoints[0]); //TEMPORARY
     }
 
     void FixedUpdate()
