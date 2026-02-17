@@ -11,7 +11,7 @@ public class CarMovement : MonoBehaviour
     public float maxSpeed = 90.0f;
     public float maxSpeedReverse = 15.0f;
 
-    public Collider currentWaypoint;
+    public Collider currentWaypoint; //NEW
     public Collider[] nextWaypoints; //NEW
     public Vector3 resetPosition = new Vector3(0, 3, 0);
     public Quaternion resetRotation = Quaternion.identity;
@@ -90,7 +90,22 @@ public class CarMovement : MonoBehaviour
             wheelColliders[i].rotationSpeed = 0f;
         }
 
-        UpdateWaypoint(currentWaypoint.GetComponent<Waypoint>().nextWaypoints[0]); //TEMPORARY
+        //UpdateWaypoint(currentWaypoint.GetComponent<Waypoint>().nextWaypoints[0]); //TEMPORARY
+    }
+
+    void OnTriggerEnter(Collider collision)
+    {
+        if (collision.gameObject.layer == 6)
+        {
+            for (int i = 0; i < nextWaypoints.Length; i++)
+            {
+                if (collision == nextWaypoints[i])
+                {
+                    UpdateWaypoint(collision);
+                    break;
+                }
+            }
+        }
     }
 
     void FixedUpdate()
