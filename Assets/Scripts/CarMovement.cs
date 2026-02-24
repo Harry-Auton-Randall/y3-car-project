@@ -51,10 +51,13 @@ public class CarMovement : MonoBehaviour
         SetStartPosition(GameObject.Find("/Waypoints/StartWaypoint").GetComponent<Collider>()); //TEMPORARY
     }
 
-    void SetStartPosition(Collider startPosition)
+    public void SetStartPosition(Collider startPosition)
     {
         currentWaypoint = startPosition;
-        transform.position = new Vector3(currentWaypoint.transform.position.x, currentWaypoint.transform.position.y + 0.575f, currentWaypoint.transform.position.z);
+        transform.position = new Vector3(
+            currentWaypoint.transform.position.x,
+            currentWaypoint.transform.position.y + 0.575f,
+            currentWaypoint.transform.position.z);
         transform.rotation = currentWaypoint.transform.rotation;
         UpdateWaypoint(currentWaypoint);
     }
@@ -89,8 +92,6 @@ public class CarMovement : MonoBehaviour
         {
             wheelColliders[i].rotationSpeed = 0f;
         }
-
-        //UpdateWaypoint(currentWaypoint.GetComponent<Waypoint>().nextWaypoints[0]); //TEMPORARY
     }
 
     void OnTriggerEnter(Collider collision)
