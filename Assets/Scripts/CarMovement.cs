@@ -8,20 +8,22 @@ public class CarMovement : MonoBehaviour
     public float steerRange = 30.0f;
     public float steerRangeMin = 0.3f;
 
+    public bool isPlayer;
+
     public float maxSpeed = 90.0f;
     public float maxSpeedReverse = 15.0f;
 
-    public Collider currentWaypoint; //NEW
-    public Collider[] nextWaypoints; //NEW
+    public Collider currentWaypoint;
+    public Collider[] nextWaypoints;
     public Vector3 resetPosition = new Vector3(0, 3, 0);
     public Quaternion resetRotation = Quaternion.identity;
 
     //Current variables
     public float motorIn, steerIn;
-    float currentSpeed;
+    public float currentSpeed;
 
     float currentSpeedFraction;
-    float steerRangeFraction;
+    public float steerRangeFraction;
 
     //References to components/children
     Rigidbody rb;
@@ -69,6 +71,11 @@ public class CarMovement : MonoBehaviour
         resetPosition.y += 3;
         resetRotation = currentWaypoint.transform.rotation;
         this.nextWaypoints = currentWaypoint.GetComponent<Waypoint>().nextWaypoints;
+        //If AI-controlled, sends info update to CarControlAI
+        if (!isPlayer)
+        {
+            GetComponent<CarControlAI>().UpdateWaypoint(this.nextWaypoints);
+        }
     }
 
     public void SetMotorIn(float value)

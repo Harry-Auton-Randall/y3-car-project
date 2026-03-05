@@ -32,7 +32,7 @@ public class CameraMovement : MonoBehaviour
     {
         //Gets movement direction of Rigidbody
         moveDir = (rb.linearVelocity);
-        if (Vector3.Distance(Vector3.zero, moveDir) < 0.1f)
+        if (moveDir.magnitude < 0.1f)
         {
             moveDir = Vector3.zero;
         }
