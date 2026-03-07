@@ -841,11 +841,15 @@ MonoBehaviour:
   torqueBrake: 1000
   steerRange: 30
   steerRangeMin: 0.3
+  isPlayer: 0
   maxSpeed: 90
   maxSpeedReverse: 15
   currentWaypoint: {fileID: 0}
   nextWaypoints: []
   resetPosition: {x: 0, y: 3, z: 0}
   resetRotation: {x: 0, y: 0, z: 0, w: 1}
+  startWaypoint: {fileID: 0}
   motorIn: 0
   steerIn: 0
+  currentSpeed: 0
+  steerRangeFraction: 0

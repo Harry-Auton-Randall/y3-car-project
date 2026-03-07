@@ -18,6 +18,8 @@ public class CarMovement : MonoBehaviour
     public Vector3 resetPosition = new Vector3(0, 3, 0);
     public Quaternion resetRotation = Quaternion.identity;
 
+    public Collider startWaypoint; //TEMPORARY
+
     //Current variables
     public float motorIn, steerIn;
     public float currentSpeed;
@@ -50,7 +52,7 @@ public class CarMovement : MonoBehaviour
         wheelModels[2] = transform.Find("WheelBackLeft");
         wheelModels[3] = transform.Find("WheelBackRight");
 
-        SetStartPosition(GameObject.Find("/Waypoints/StartWaypoint").GetComponent<Collider>()); //TEMPORARY
+        SetStartPosition(startWaypoint); //TEMPORARY
     }
 
     public void SetStartPosition(Collider startPosition)
