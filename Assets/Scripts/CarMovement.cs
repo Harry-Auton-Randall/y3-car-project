@@ -76,7 +76,7 @@ public class CarMovement : MonoBehaviour
         //If AI-controlled, sends info update to CarControlAI
         if (!isPlayer)
         {
-            GetComponent<CarControlAI>().UpdateWaypoint(this.nextWaypoints);
+            GetComponent<CarControlAI>().UpdateWaypoint(this.currentWaypoint, this.nextWaypoints);
         }
     }
 
