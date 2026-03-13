@@ -641,6 +641,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d5ab4cc77c765843978d5253369bbf5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CarControlAI
+  waypointsAhead: 2
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
