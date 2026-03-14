@@ -25,11 +25,12 @@ public class CarControlAI : MonoBehaviour
     float[] waypointTurningAngles; //NEW
     float[] waypointTurningDists; //NEW
 
-    Vector3 carTurningEnd; //NEW
     float carTurningRadius; //NEW
     float carTurningSpeed; //NEW
     float carTurningAngle; //NEW
     float carTurningDist; //NEW
+
+    float turningDistTotal;
 
     public int waypointsAhead = 2;
 
@@ -218,6 +219,12 @@ public class CarControlAI : MonoBehaviour
         waypointDirection.y = 0;
         waypointAngle = Vector3.SignedAngle(Vector3.forward, waypointDirection, Vector3.up);
 
+        //Calculate the car's turning values - waypointDirection is the turningEnd
+        carTurningRadius = CalculateTurningRadius(waypointDirection);
+        carTurningSpeed = CalculateTurningSpeed(carTurningRadius);
+        carTurningAngle = CalculateTurningAngle(waypointDirection, carTurningRadius);
+        carTurningDist = CalculateTurningDist(carTurningAngle, carTurningRadius);
+
         //change car inputs depending on waypointAngle
         //Steering
         maxSteering = carMovement.steerRange * carMovement.steerRangeFraction;
@@ -249,6 +256,41 @@ public class CarControlAI : MonoBehaviour
             targetSpeedFraction = ((-0.9f / 75f) * Mathf.Abs(waypointAngle)) + 1.18f;
             targetSpeed = targetSpeedFraction * carMovement.maxSpeed;
         }
+
+        //Calculates how fast the car would be at each waypoint if it started braking now
+        //Checks against each waypoint's turningSpeed, changes targetSpeed if going too fast
+        turningDistTotal = carTurningDist;
+        if (Mathf.Pow(waypointTurningSpeeds[0], 2) < 
+            Mathf.Pow(carMovement.currentSpeed, 2) - (16 * turningDistTotal))
+        {
+            targetSpeed = waypointTurningSpeeds[0];
+        }
+        if (waypointsAhead > 2)
+        {
+            for (int i = 0; i < waypointsAhead - 2; i++)
+            {
+                turningDistTotal += waypointTurningDists[i];
+                if (Mathf.Pow(waypointTurningSpeeds[i+1], 2) <
+                    Mathf.Pow(carMovement.currentSpeed, 2) - (16 * turningDistTotal))
+                {
+                    targetSpeed = waypointTurningSpeeds[i+1];
+                }
+            }
+        }
+
+        //Also checks targetSpeed against carTurningSpeed,
+        //so the car doesn't speed up halfway through a corner
+        if (targetSpeed > carTurningSpeed)
+        { 
+            targetSpeed = carTurningSpeed;
+        }
+
+        //Also prevents the car from going too slow
+        if (targetSpeed < carMovement.maxSpeed * 0.1f)
+        {
+            targetSpeed = carMovement.maxSpeed * 0.1f;
+        }
+
 
         if (carMovement.currentSpeed <= targetSpeed)
         {
