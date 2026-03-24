@@ -30,7 +30,7 @@ public class CarControlAI : MonoBehaviour
     float carTurningAngle; //NEW
     float carTurningDist; //NEW
 
-    float turningDistTotal;
+    float turningDistTotal; //NEW
 
     public int waypointsAhead = 2;
 
@@ -63,8 +63,8 @@ public class CarControlAI : MonoBehaviour
                     waypointTurningEnds[i] = waypointTurningEnds[i + 1];
                     waypointTurningRadii[i] = waypointTurningRadii[i + 1];
                     waypointTurningSpeeds[i] = waypointTurningSpeeds[i + 1];
-                    waypointTurningAngles[i] = waypointTurningSpeeds[i + 1];
-                    waypointTurningDists[i] = waypointTurningSpeeds[i + 1];
+                    waypointTurningAngles[i] = waypointTurningAngles[i + 1]; //NEW
+                    waypointTurningDists[i] = waypointTurningDists[i + 1]; //NEW
                 }
             }
 
@@ -223,7 +223,15 @@ public class CarControlAI : MonoBehaviour
         carTurningRadius = CalculateTurningRadius(waypointDirection);
         carTurningSpeed = CalculateTurningSpeed(carTurningRadius);
         carTurningAngle = CalculateTurningAngle(waypointDirection, carTurningRadius);
-        carTurningDist = CalculateTurningDist(carTurningAngle, carTurningRadius);
+        if (carTurningAngle == 0)
+        {
+            carTurningDist = waypointDirection.z;
+        }
+        else
+        {
+            carTurningDist = CalculateTurningDist
+                (carTurningAngle, carTurningRadius);
+        }
 
         //change car inputs depending on waypointAngle
         //Steering
@@ -263,7 +271,10 @@ public class CarControlAI : MonoBehaviour
         if (Mathf.Pow(waypointTurningSpeeds[0], 2) < 
             Mathf.Pow(carMovement.currentSpeed, 2) - (16 * turningDistTotal))
         {
-            targetSpeed = waypointTurningSpeeds[0];
+            if (waypointTurningSpeeds[0] < targetSpeed)
+            {
+                targetSpeed = waypointTurningSpeeds[0];
+            }
         }
         if (waypointsAhead > 2)
         {
@@ -273,7 +284,10 @@ public class CarControlAI : MonoBehaviour
                 if (Mathf.Pow(waypointTurningSpeeds[i+1], 2) <
                     Mathf.Pow(carMovement.currentSpeed, 2) - (16 * turningDistTotal))
                 {
-                    targetSpeed = waypointTurningSpeeds[i+1];
+                    if (waypointTurningSpeeds[i+1] < targetSpeed)
+                    {
+                        targetSpeed = waypointTurningSpeeds[i+1];
+                    }
                 }
             }
         }
