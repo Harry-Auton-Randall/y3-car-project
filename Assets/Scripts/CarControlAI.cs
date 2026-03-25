@@ -22,22 +22,30 @@ public class CarControlAI : MonoBehaviour
     Vector3[] waypointTurningEnds;
     float[] waypointTurningRadii;
     float[] waypointTurningSpeeds;
-    float[] waypointTurningAngles; //NEW
-    float[] waypointTurningDists; //NEW
+    float[] waypointTurningAngles;
+    float[] waypointTurningDists;
 
-    float carTurningRadius; //NEW
-    float carTurningSpeed; //NEW
-    float carTurningAngle; //NEW
-    float carTurningDist; //NEW
+    float carTurningRadius;
+    float carTurningSpeed;
+    float carTurningAngle;
+    float carTurningDist;
 
-    float turningDistTotal; //NEW
+    float turningDistTotal;
 
     public int waypointsAhead = 2;
+
+    //NEW
+    bool reversing = false;
+
+    Ray[] frontBackRays = new Ray[6];
+    LayerMask waypointMask;
+    RaycastHit rayHit;
 
     void Awake()
     {
         carMovement = GetComponent<CarMovement>();
         rb = GetComponent<Rigidbody>();
+        waypointMask = ~(1 << 6); //NEW
     }
 
     public void UpdateWaypoint(Collider currentWaypointIn, Collider[] nextWaypointsIn)
@@ -63,8 +71,8 @@ public class CarControlAI : MonoBehaviour
                     waypointTurningEnds[i] = waypointTurningEnds[i + 1];
                     waypointTurningRadii[i] = waypointTurningRadii[i + 1];
                     waypointTurningSpeeds[i] = waypointTurningSpeeds[i + 1];
-                    waypointTurningAngles[i] = waypointTurningAngles[i + 1]; //NEW
-                    waypointTurningDists[i] = waypointTurningDists[i + 1]; //NEW
+                    waypointTurningAngles[i] = waypointTurningAngles[i + 1];
+                    waypointTurningDists[i] = waypointTurningDists[i + 1];
                 }
             }
 
@@ -78,9 +86,9 @@ public class CarControlAI : MonoBehaviour
                 (waypointTurningRadii[waypointsAhead - 2]);
 
             waypointTurningAngles[waypointsAhead - 2] = CalculateTurningAngle
-                (waypointTurningEnds[waypointsAhead - 2], waypointTurningRadii[waypointsAhead - 2]); //NEW
+                (waypointTurningEnds[waypointsAhead - 2], waypointTurningRadii[waypointsAhead - 2]);
 
-            if (waypointTurningAngles[waypointsAhead - 2] == 0) //NEW IF/ELSE
+            if (waypointTurningAngles[waypointsAhead - 2] == 0)
             {
                 waypointTurningDists[waypointsAhead - 2] = waypointTurningEnds[waypointsAhead - 2].z;
             }
@@ -104,8 +112,8 @@ public class CarControlAI : MonoBehaviour
         waypointTurningEnds = new Vector3[waypointsAhead - 1];
         waypointTurningRadii = new float[waypointsAhead - 1];
         waypointTurningSpeeds = new float[waypointsAhead - 1];
-        waypointTurningAngles = new float[waypointsAhead - 1]; //NEW
-        waypointTurningDists = new float[waypointsAhead - 1]; //NEW
+        waypointTurningAngles = new float[waypointsAhead - 1];
+        waypointTurningDists = new float[waypointsAhead - 1];
 
         nextWaypoints = nextWaypointsIn2;
         targetWaypoints[0] = FindNextWaypoint(nextWaypoints);
@@ -125,9 +133,9 @@ public class CarControlAI : MonoBehaviour
             waypointTurningSpeeds[i] = CalculateTurningSpeed(waypointTurningRadii[i]);
 
             waypointTurningAngles[i] = CalculateTurningAngle
-                (waypointTurningEnds[i], waypointTurningRadii[i]); //NEW
+                (waypointTurningEnds[i], waypointTurningRadii[i]);
 
-            if (waypointTurningAngles[i] == 0) //NEW IF/ELSE
+            if (waypointTurningAngles[i] == 0)
             {
                 waypointTurningDists[i] = waypointTurningEnds[i].z;
             }
@@ -197,6 +205,21 @@ public class CarControlAI : MonoBehaviour
 
     void Update()
     {
+        //Draw rays - NEW
+        frontBackRays[0] = new Ray(transform.position + (transform.right * -0.44f), transform.forward);
+        frontBackRays[1] = new Ray(transform.position, transform.forward);
+        frontBackRays[2] = new Ray(transform.position + (transform.right * 0.44f), transform.forward);
+
+        frontBackRays[3] = new Ray(transform.position + (transform.right * -0.44f), transform.forward * -1);
+        frontBackRays[4] = new Ray(transform.position, transform.forward * -1);
+        frontBackRays[5] = new Ray(transform.position + (transform.right * 0.44f), transform.forward * -1);
+
+        //Makes the rays visible in Scene view - NEW
+        for (int i=0;i<6;i++)
+        {
+            Debug.DrawRay(frontBackRays[i].origin, frontBackRays[i].direction * 1.7f, Color.yellow);
+        }
+
         //check how long the car's been stationary
         if (rb.linearVelocity.magnitude < 0.5f)
         {
@@ -207,11 +230,34 @@ public class CarControlAI : MonoBehaviour
             timeStill = 0;
         }
 
+        //If still for more than 0.5 seconds, and the car's front is touching something, begin reversing - NEW
+        if (timeStill >= 0.5f)
+        {
+            for (int i=0;i<3;i++)
+            {
+                if (Physics.Raycast(frontBackRays[i], out rayHit, 1.7f, waypointMask))
+                {
+                    reversing = true;
+                    break;
+                }
+            }
+        }
+        //Disables reversing if the car's rear touches something - NEW
+        for (int i = 3; i < 6; i++)
+        {
+            if (Physics.Raycast(frontBackRays[i], out rayHit, 1.7f, waypointMask))
+            {
+                reversing = false;
+                break;
+            }
+        }
+
         //ResetPosition if still for more than 3 seconds
         if (timeStill >= 3f)
         {
             carMovement.ResetPosition();
             timeStill = 0;
+            reversing = false;
         }
 
         //get the angle between the car's rotation and the waypoint's position
@@ -248,71 +294,85 @@ public class CarControlAI : MonoBehaviour
         else
         {
             steerIn = waypointAngle / maxSteering;
+            reversing = false; //NEW
+        }
+        //Invert steering if going backwards - NEW
+        if (carMovement.currentSpeed < 0)
+        {
+            steerIn *= -1;
         }
 
-        //Motor - first sets targetSpeed, then accelerates/brakes if its below/above that speed
-        if (Mathf.Abs(waypointAngle) <= 15f)
+        //If reversing, override all speed calculations and set motorIn to -1 - NEW
+        if (reversing)
         {
-            targetSpeed = carMovement.maxSpeed;
-        }
-        else if (Mathf.Abs(waypointAngle) > 90f)
-        {
-            targetSpeed = carMovement.maxSpeed * 0.1f;
+            motorIn = -1;
         }
         else
         {
-            targetSpeedFraction = ((-0.9f / 75f) * Mathf.Abs(waypointAngle)) + 1.18f;
-            targetSpeed = targetSpeedFraction * carMovement.maxSpeed;
-        }
-
-        //Calculates how fast the car would be at each waypoint if it started braking now
-        //Checks against each waypoint's turningSpeed, changes targetSpeed if going too fast
-        turningDistTotal = carTurningDist;
-        if (Mathf.Pow(waypointTurningSpeeds[0], 2) < 
-            Mathf.Pow(carMovement.currentSpeed, 2) - (16 * turningDistTotal))
-        {
-            if (waypointTurningSpeeds[0] < targetSpeed)
+            //Motor - first sets targetSpeed, then accelerates/brakes if its below/above that speed
+            if (Mathf.Abs(waypointAngle) <= 15f)
             {
-                targetSpeed = waypointTurningSpeeds[0];
+                targetSpeed = carMovement.maxSpeed;
             }
-        }
-        if (waypointsAhead > 2)
-        {
-            for (int i = 0; i < waypointsAhead - 2; i++)
+            else if (Mathf.Abs(waypointAngle) > 90f)
             {
-                turningDistTotal += waypointTurningDists[i];
-                if (Mathf.Pow(waypointTurningSpeeds[i+1], 2) <
-                    Mathf.Pow(carMovement.currentSpeed, 2) - (16 * turningDistTotal))
+                targetSpeed = carMovement.maxSpeed * 0.1f;
+            }
+            else
+            {
+                targetSpeedFraction = ((-0.9f / 75f) * Mathf.Abs(waypointAngle)) + 1.18f;
+                targetSpeed = targetSpeedFraction * carMovement.maxSpeed;
+            }
+
+            //Calculates how fast the car would be at each waypoint if it started braking now
+            //Checks against each waypoint's turningSpeed, changes targetSpeed if going too fast
+            turningDistTotal = carTurningDist;
+            if (Mathf.Pow(waypointTurningSpeeds[0], 2) <
+                Mathf.Pow(carMovement.currentSpeed, 2) - (16 * turningDistTotal))
+            {
+                if (waypointTurningSpeeds[0] < targetSpeed)
                 {
-                    if (waypointTurningSpeeds[i+1] < targetSpeed)
+                    targetSpeed = waypointTurningSpeeds[0];
+                }
+            }
+            if (waypointsAhead > 2)
+            {
+                for (int i = 0; i < waypointsAhead - 2; i++)
+                {
+                    turningDistTotal += waypointTurningDists[i];
+                    if (Mathf.Pow(waypointTurningSpeeds[i + 1], 2) <
+                        Mathf.Pow(carMovement.currentSpeed, 2) - (16 * turningDistTotal))
                     {
-                        targetSpeed = waypointTurningSpeeds[i+1];
+                        if (waypointTurningSpeeds[i + 1] < targetSpeed)
+                        {
+                            targetSpeed = waypointTurningSpeeds[i + 1];
+                        }
                     }
                 }
             }
-        }
 
-        //Also checks targetSpeed against carTurningSpeed,
-        //so the car doesn't speed up halfway through a corner
-        if (targetSpeed > carTurningSpeed)
-        { 
-            targetSpeed = carTurningSpeed;
-        }
+            //Also checks targetSpeed against carTurningSpeed,
+            //so the car doesn't speed up halfway through a corner
+            if (targetSpeed > carTurningSpeed)
+            {
+                targetSpeed = carTurningSpeed;
+            }
 
-        //Also prevents the car from going too slow
-        if (targetSpeed < carMovement.maxSpeed * 0.1f)
-        {
-            targetSpeed = carMovement.maxSpeed * 0.1f;
-        }
+            //Also prevents the car from going too slow
+            if (targetSpeed < carMovement.maxSpeed * 0.1f)
+            {
+                targetSpeed = carMovement.maxSpeed * 0.1f;
+            }
 
 
-        if (carMovement.currentSpeed <= targetSpeed)
-        {
-            motorIn = 1;
-        }
-        else
-        {
-            motorIn = -1;
+            if (carMovement.currentSpeed <= targetSpeed)
+            {
+                motorIn = 1;
+            }
+            else
+            {
+                motorIn = -1;
+            }
         }
 
         carMovement.SetMotorIn(motorIn);
