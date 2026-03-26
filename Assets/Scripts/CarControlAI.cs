@@ -34,18 +34,22 @@ public class CarControlAI : MonoBehaviour
 
     public int waypointsAhead = 2;
 
-    //NEW
     bool reversing = false;
 
     Ray[] frontBackRays = new Ray[6];
     LayerMask waypointMask;
     RaycastHit rayHit;
 
+    //NEW
+    Ray waypointRotationRay;
+    Vector3 waypointToCarPosition;
+    float waypointToCarAngle;
+
     void Awake()
     {
         carMovement = GetComponent<CarMovement>();
         rb = GetComponent<Rigidbody>();
-        waypointMask = ~(1 << 6); //NEW
+        waypointMask = (1 << 6);
     }
 
     public void UpdateWaypoint(Collider currentWaypointIn, Collider[] nextWaypointsIn)
@@ -205,7 +209,7 @@ public class CarControlAI : MonoBehaviour
 
     void Update()
     {
-        //Draw rays - NEW
+        //Draw rays
         frontBackRays[0] = new Ray(transform.position + (transform.right * -0.44f), transform.forward);
         frontBackRays[1] = new Ray(transform.position, transform.forward);
         frontBackRays[2] = new Ray(transform.position + (transform.right * 0.44f), transform.forward);
@@ -214,11 +218,15 @@ public class CarControlAI : MonoBehaviour
         frontBackRays[4] = new Ray(transform.position, transform.forward * -1);
         frontBackRays[5] = new Ray(transform.position + (transform.right * 0.44f), transform.forward * -1);
 
-        //Makes the rays visible in Scene view - NEW
+        waypointRotationRay = new Ray(transform.position, targetWaypoints[0].forward); //NEW
+
+        //Makes the rays visible in Scene view
         for (int i=0;i<6;i++)
         {
             Debug.DrawRay(frontBackRays[i].origin, frontBackRays[i].direction * 1.7f, Color.yellow);
         }
+        Debug.DrawRay(waypointRotationRay.origin, 
+            waypointRotationRay.direction * 1000, Color.yellow); //NEW
 
         //check how long the car's been stationary
         if (rb.linearVelocity.magnitude < 0.5f)
@@ -230,22 +238,23 @@ public class CarControlAI : MonoBehaviour
             timeStill = 0;
         }
 
-        //If still for more than 0.5 seconds, and the car's front is touching something, begin reversing - NEW
+        //If still for more than 0.5 seconds, and the car's front
+        //is touching something, begin reversing
         if (timeStill >= 0.5f)
         {
             for (int i=0;i<3;i++)
             {
-                if (Physics.Raycast(frontBackRays[i], out rayHit, 1.7f, waypointMask))
+                if (Physics.Raycast(frontBackRays[i], out rayHit, 1.7f, ~(waypointMask)))
                 {
                     reversing = true;
                     break;
                 }
             }
         }
-        //Disables reversing if the car's rear touches something - NEW
+        //Disables reversing if the car's rear touches something
         for (int i = 3; i < 6; i++)
         {
-            if (Physics.Raycast(frontBackRays[i], out rayHit, 1.7f, waypointMask))
+            if (Physics.Raycast(frontBackRays[i], out rayHit, 1.7f, ~(waypointMask)))
             {
                 reversing = false;
                 break;
@@ -260,8 +269,23 @@ public class CarControlAI : MonoBehaviour
             reversing = false;
         }
 
-        //get the angle between the car's rotation and the waypoint's position
-        waypointDirection = transform.InverseTransformPoint(targetWaypoints[0].position);
+        //Find the car's position/angle relative to the next waypoint - NEW
+        waypointToCarPosition = targetWaypoints[0].InverseTransformPoint(transform.position);
+        waypointToCarPosition.y = 0;
+        waypointToCarAngle = Vector3.Angle(Vector3.forward * -1, waypointToCarPosition);
+
+        //NEW
+        //get the angle between the car's rotation and waypointDirection
+        //waypointDirection is either its position or the direction its facing
+        if (Physics.Raycast(waypointRotationRay, out rayHit, Mathf.Infinity, waypointMask)
+            && rayHit.transform == targetWaypoints[0] && waypointToCarAngle > 30)
+        {
+            waypointDirection = transform.InverseTransformPoint(rayHit.point);
+        }
+        else
+        {
+            waypointDirection = transform.InverseTransformPoint(targetWaypoints[0].position);
+        }
         waypointDirection.y = 0;
         waypointAngle = Vector3.SignedAngle(Vector3.forward, waypointDirection, Vector3.up);
 
@@ -294,15 +318,15 @@ public class CarControlAI : MonoBehaviour
         else
         {
             steerIn = waypointAngle / maxSteering;
-            reversing = false; //NEW
+            reversing = false;
         }
-        //Invert steering if going backwards - NEW
+        //Invert steering if going backwards
         if (carMovement.currentSpeed < 0)
         {
             steerIn *= -1;
         }
 
-        //If reversing, override all speed calculations and set motorIn to -1 - NEW
+        //If reversing, override all speed calculations and set motorIn to -1
         if (reversing)
         {
             motorIn = -1;
