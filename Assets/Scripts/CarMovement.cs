@@ -17,6 +17,7 @@ public class CarMovement : MonoBehaviour
     public Collider[] nextWaypoints;
     public Vector3 resetPosition = new Vector3(0, 3, 0);
     public Quaternion resetRotation = Quaternion.identity;
+    int waypointLayer;
 
     public Collider startWaypoint; //TEMPORARY
 
@@ -36,6 +37,13 @@ public class CarMovement : MonoBehaviour
     Vector3 wheelPos;
     Quaternion wheelRot;
 
+    //Respawning stuff - NEW
+    public float respawnTimeTotal = 3;
+    float respawnTime;
+    bool respawnImmunity;
+    LayerMask carMask;
+    int carCollisions;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -51,6 +59,9 @@ public class CarMovement : MonoBehaviour
         wheelModels[1] = transform.Find("WheelFrontRight");
         wheelModels[2] = transform.Find("WheelBackLeft");
         wheelModels[3] = transform.Find("WheelBackRight");
+
+        waypointLayer = LayerMask.NameToLayer("Waypoint");
+        carMask = (1 << LayerMask.NameToLayer("Car")); //NEW
 
         SetStartPosition(startWaypoint); //TEMPORARY
     }
@@ -101,11 +112,17 @@ public class CarMovement : MonoBehaviour
         {
             wheelColliders[i].rotationSpeed = 0f;
         }
+
+        //NEW
+        respawnTime = 0;
+        rb.excludeLayers = carMask;
+        respawnImmunity = true;
+        transform.Find("Body").GetComponent<Renderer>().enabled = false;
     }
 
     void OnTriggerEnter(Collider collision)
     {
-        if (collision.gameObject.layer == 6)
+        if (collision.gameObject.layer == waypointLayer)
         {
             for (int i = 0; i < nextWaypoints.Length; i++)
             {
@@ -116,10 +133,37 @@ public class CarMovement : MonoBehaviour
                 }
             }
         }
+        //NEW
+        if (collision.gameObject.tag == "CarTrigger")
+        {
+            carCollisions += 1;
+        }
+    }
+
+    //NEW
+    void OnTriggerExit(Collider collision)
+    {
+        if (collision.gameObject.tag == "CarTrigger")
+        {
+            carCollisions -= 1;
+        }
     }
 
     void FixedUpdate()
     {
+        //Disables the car's respawn immunity if enough time's passed
+        //and it's not inside any other cars - NEW
+        if (respawnImmunity)
+        {
+            respawnTime += Time.fixedDeltaTime;
+            if ((respawnTime >= respawnTimeTotal) && (carCollisions == 0))
+            {
+                rb.excludeLayers = 0;
+                respawnImmunity = false;
+                transform.Find("Body").GetComponent<Renderer>().enabled = true;
+            }
+        }
+
         //Finds forward speed
         currentSpeed = Vector3.Dot(transform.forward, rb.linearVelocity);
         if (Mathf.Abs(currentSpeed) < 0.01f)

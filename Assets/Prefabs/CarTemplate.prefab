@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5242915913415249363}
   - component: {fileID: 5589835038376746533}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: WheelBackRightCollider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -82,7 +82,7 @@ GameObject:
   - component: {fileID: 7201096415592244375}
   - component: {fileID: 5750584172033659533}
   - component: {fileID: 3567809141924867961}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: WheelBackRight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -172,7 +172,7 @@ GameObject:
   - component: {fileID: 6926438865597043524}
   - component: {fileID: 5848380269197061708}
   - component: {fileID: 8457188475541524672}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: WheelFrontLeft
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -261,7 +261,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2958424398085796975}
   - component: {fileID: 7369945159669932042}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: WheelFrontLeftCollider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -332,7 +332,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4462011024729706231}
   - component: {fileID: 6925739578596097882}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: WheelBackLeftCollider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -405,7 +405,7 @@ GameObject:
   - component: {fileID: 3123135442644530393}
   - component: {fileID: 948664130823487940}
   - component: {fileID: 2880767163421542114}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Body
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -516,7 +516,7 @@ GameObject:
   - component: {fileID: 842803323221935246}
   - component: {fileID: 267443695436900617}
   - component: {fileID: 2679105909465539966}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: WheelFrontRight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -605,7 +605,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8453726686460422449}
   - component: {fileID: 6608090417052232539}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: WheelFrontRightCollider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -677,7 +677,7 @@ GameObject:
   - component: {fileID: 8122406857360470396}
   - component: {fileID: 4614789627668308294}
   - component: {fileID: 7128975121666513194}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: WheelBackLeft
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -767,7 +767,7 @@ GameObject:
   - component: {fileID: 7771842000746155582}
   - component: {fileID: 8948032923059320092}
   - component: {fileID: 6562416408479173078}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: CarTemplate
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -788,6 +788,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7469152685979742672}
+  - {fileID: 3653839227910091256}
   - {fileID: 6926438865597043524}
   - {fileID: 842803323221935246}
   - {fileID: 8122406857360470396}
@@ -853,3 +854,56 @@ MonoBehaviour:
   steerIn: 0
   currentSpeed: 0
   steerRangeFraction: 0
+--- !u!1 &8290589737701874446
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3653839227910091256}
+  - component: {fileID: 3521119807115689696}
+  m_Layer: 0
+  m_Name: Trigger
+  m_TagString: CarTrigger
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3653839227910091256
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8290589737701874446}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.9, y: 0.8, z: 3.2}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7771842000746155582}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &3521119807115689696
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8290589737701874446}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}

@@ -49,7 +49,7 @@ public class CarControlAI : MonoBehaviour
     {
         carMovement = GetComponent<CarMovement>();
         rb = GetComponent<Rigidbody>();
-        waypointMask = (1 << 6);
+        waypointMask = (1 << LayerMask.NameToLayer("Waypoint"));
     }
 
     public void UpdateWaypoint(Collider currentWaypointIn, Collider[] nextWaypointsIn)
