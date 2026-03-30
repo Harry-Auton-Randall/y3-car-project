@@ -44,6 +44,14 @@ public class CarMovement : MonoBehaviour
     LayerMask carMask;
     int carCollisions;
 
+    //Lap stuff - NEW
+    int lap = 1;
+    int lapWaypoint;
+    Collider nextLapWaypoint;
+    float nextLapWaypointDist;
+    bool lapZero;
+    Waypoint nextLapWaypointInfo;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -62,7 +70,9 @@ public class CarMovement : MonoBehaviour
 
         waypointLayer = LayerMask.NameToLayer("Waypoint");
         carMask = (1 << LayerMask.NameToLayer("Car")); //NEW
-
+    }
+    void Start()
+    {
         SetStartPosition(startWaypoint); //TEMPORARY
     }
 
@@ -74,6 +84,16 @@ public class CarMovement : MonoBehaviour
             currentWaypoint.transform.position.y + 0.575f,
             currentWaypoint.transform.position.z);
         transform.rotation = currentWaypoint.transform.rotation;
+
+        //Set up lap stuff - NEW
+        nextLapWaypoint = currentWaypoint.GetComponent<Waypoint>().firstLapWaypoint;
+        nextLapWaypointInfo = nextLapWaypoint.GetComponent<Waypoint>();
+        lapWaypoint = nextLapWaypointInfo.lapWaypointValue - 1;
+        if (currentWaypoint.GetComponent<Waypoint>().startBeforeLine)
+        {
+            lapZero = true;
+        }
+
         UpdateWaypoint(currentWaypoint);
     }
 
@@ -129,6 +149,27 @@ public class CarMovement : MonoBehaviour
                 if (collision == nextWaypoints[i])
                 {
                     UpdateWaypoint(collision);
+
+                    //Reaching the next lapWaypoint - NEW
+                    if (collision == nextLapWaypoint)
+                    {
+                        if (nextLapWaypointInfo.lapEnd)
+                        {
+                            if (lapZero)
+                            {
+                                lapZero = false;
+                            }
+                            else
+                            {
+                                lap += 1;
+                            }
+                        }
+
+                        lapWaypoint = nextLapWaypointInfo.lapWaypointValue;
+                        nextLapWaypoint = nextLapWaypointInfo.nextLapWaypoint;
+                        nextLapWaypointInfo = nextLapWaypoint.GetComponent<Waypoint>();
+                    }
+
                     break;
                 }
             }
@@ -163,6 +204,10 @@ public class CarMovement : MonoBehaviour
                 transform.Find("Body").GetComponent<Renderer>().enabled = true;
             }
         }
+
+        //Finds distance to the next lapWaypoint - NEW
+        nextLapWaypointDist = Vector3.Distance(transform.position,
+            nextLapWaypoint.ClosestPoint(transform.position));
 
         //Finds forward speed
         currentSpeed = Vector3.Dot(transform.forward, rb.linearVelocity);
