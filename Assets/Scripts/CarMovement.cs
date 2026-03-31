@@ -19,7 +19,7 @@ public class CarMovement : MonoBehaviour
     public Quaternion resetRotation = Quaternion.identity;
     int waypointLayer;
 
-    public Collider startWaypoint; //TEMPORARY
+    //public Collider startWaypoint; - NO LONGER NEEDED
 
     //Current variables
     public float motorIn, steerIn;
@@ -82,10 +82,10 @@ public class CarMovement : MonoBehaviour
         lapTimeBest = 0;
 
     }
-    void Start()
-    {
-        SetStartPosition(startWaypoint); //TEMPORARY
-    }
+    //void Start() - NO LONGER NEEDED
+    //{
+    //    SetStartPosition(startWaypoint);
+    //}
 
     public void SetStartPosition(Collider startPosition)
     {

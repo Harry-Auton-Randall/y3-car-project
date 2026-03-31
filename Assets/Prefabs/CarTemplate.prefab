@@ -849,11 +849,14 @@ MonoBehaviour:
   nextWaypoints: []
   resetPosition: {x: 0, y: 3, z: 0}
   resetRotation: {x: 0, y: 0, z: 0, w: 1}
-  startWaypoint: {fileID: 0}
   motorIn: 0
   steerIn: 0
   currentSpeed: 0
   steerRangeFraction: 0
+  respawnTimeTotal: 3
+  lapTimeCurrent: 0
+  lapTimeTotal: 0
+  lapTimeBest: 0
 --- !u!1 &8290589737701874446
 GameObject:
   m_ObjectHideFlags: 0
