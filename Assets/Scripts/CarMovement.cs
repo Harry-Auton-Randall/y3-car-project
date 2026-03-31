@@ -37,20 +37,24 @@ public class CarMovement : MonoBehaviour
     Vector3 wheelPos;
     Quaternion wheelRot;
 
-    //Respawning stuff - NEW
+    //Respawning stuff
     public float respawnTimeTotal = 3;
     float respawnTime;
     bool respawnImmunity;
     LayerMask carMask;
     int carCollisions;
 
-    //Lap stuff - NEW
+    //Lap stuff
     int lap = 1;
     int lapWaypoint;
     Collider nextLapWaypoint;
     float nextLapWaypointDist;
     bool lapZero;
     Waypoint nextLapWaypointInfo;
+
+    //Lap time stuff - NEW
+    float lapTimePrevious;
+    public float lapTimeCurrent, lapTimeTotal, lapTimeBest;
 
     void Awake()
     {
@@ -70,6 +74,13 @@ public class CarMovement : MonoBehaviour
 
         waypointLayer = LayerMask.NameToLayer("Waypoint");
         carMask = (1 << LayerMask.NameToLayer("Car")); //NEW
+
+        //NEW
+        lapTimePrevious = 0;
+        lapTimeCurrent = 0;
+        lapTimeTotal = 0;
+        lapTimeBest = 0;
+
     }
     void Start()
     {
@@ -162,6 +173,13 @@ public class CarMovement : MonoBehaviour
                             else
                             {
                                 lap += 1;
+                                //NEW
+                                lapTimePrevious += lapTimeCurrent;
+                                if (lapTimeBest == 0 || lapTimeBest > lapTimeCurrent)
+                                {
+                                    lapTimeBest = lapTimeCurrent;
+                                }
+                                lapTimeCurrent = 0;
                             }
                         }
 
@@ -192,6 +210,10 @@ public class CarMovement : MonoBehaviour
 
     void FixedUpdate()
     {
+        //lapTime - NEW
+        lapTimeCurrent += Time.fixedDeltaTime;
+        lapTimeTotal = lapTimeCurrent + lapTimePrevious;
+
         //Disables the car's respawn immunity if enough time's passed
         //and it's not inside any other cars - NEW
         if (respawnImmunity)
