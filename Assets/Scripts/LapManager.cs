@@ -1,5 +1,7 @@
 using UnityEngine;
-using System; //NEW
+using System;
+using System.Collections; //NEW
+using System.Collections.Generic; //NEW
 
 public class LapManager : MonoBehaviour
 {
@@ -9,9 +11,16 @@ public class LapManager : MonoBehaviour
     public int cars, playerStartingPosition;
     public GameObject playerCar, aiCar;
     GameObject instance;
-    //NEW
+    
     CarMovement[] carMovements;
     int[] carPositions;
+
+    //NEW
+    public int totalLaps = 3;
+    float[] totalLapTimes;
+    float[] bestLapTimes;
+    List<int> finalPositions;
+
 
     void Awake()
     {
@@ -33,9 +42,15 @@ public class LapManager : MonoBehaviour
         cars = Mathf.Clamp(cars, 2, startWaypoints.Length);
         playerStartingPosition = Mathf.Clamp(playerStartingPosition, 1, cars);
 
-        //initialise arrays - NEW
+        //initialise arrays
         carMovements = new CarMovement[cars];
         carPositions = new int[cars];
+        //NEW
+        totalLapTimes = new float[cars];
+        bestLapTimes = new float[cars];
+        finalPositions = new List<int>(cars);
+
+        if (totalLaps < 1) { totalLaps = 1; }
 
         //Instantiates player and AI cars in the correct positions
         for (int i=0;i<cars;i++)
@@ -48,11 +63,22 @@ public class LapManager : MonoBehaviour
             {
                 instance = Instantiate(aiCar);
             }
-            //NEW
+            
             carMovements[i] = instance.GetComponent<CarMovement>();
-            carMovements[i].SetStartPosition(startWaypoints[i]);
+            carMovements[i].SetStartPosition(startWaypoints[i], i, totalLaps); //NEW INPUTS
             carPositions[i] = i;
         }
+
+        //NEW
+        StartCoroutine(StartRace());
+    }
+
+    //NEW
+    public void RegisterFinish(int idIn, float totalTimeIn, float bestTimeIn)
+    {
+        finalPositions.Add(idIn);
+        totalLapTimes[idIn] = totalTimeIn;
+        bestLapTimes[idIn] = bestTimeIn;
     }
 
     void Update()
@@ -70,6 +96,16 @@ public class LapManager : MonoBehaviour
         for (int i=0;i<carPositions.Length;i++)
         {
             carMovements[carPositions[i]].positionPub = i + 1;
+        }
+    }
+
+    //NEW
+    IEnumerator StartRace()
+    {
+        yield return new WaitForSeconds(3);
+        for (int i=0;i<carMovements.Length;i++)
+        {
+            carMovements[i].EnableRaceStarted();
         }
     }
 }

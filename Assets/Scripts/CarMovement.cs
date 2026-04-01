@@ -51,12 +51,17 @@ public class CarMovement : MonoBehaviour
     float nextLapWaypointDist;
     bool lapZero;
     Waypoint nextLapWaypointInfo;
-    //NEW
+    
     public int lapPub, lapWaypointPub;
     public float nextLapWaypointDistPub;
     public int positionPub;
 
-    //Lap time stuff - NEW
+    //lap start/end stuff - NEW
+    bool raceStarted = false;
+    bool finished = false;
+    int id, totalLaps;
+
+    //Lap time stuff
     float lapTimePrevious;
     public float lapTimeCurrent, lapTimeTotal, lapTimeBest;
 
@@ -77,21 +82,21 @@ public class CarMovement : MonoBehaviour
         wheelModels[3] = transform.Find("WheelBackRight");
 
         waypointLayer = LayerMask.NameToLayer("Waypoint");
-        carMask = (1 << LayerMask.NameToLayer("Car")); //NEW
+        carMask = (1 << LayerMask.NameToLayer("Car"));
 
-        //NEW
         lapTimePrevious = 0;
         lapTimeCurrent = 0;
         lapTimeTotal = 0;
         lapTimeBest = 0;
 
+        rb.constraints = RigidbodyConstraints.FreezeAll; //NEW
     }
     //void Start() - NO LONGER NEEDED
     //{
     //    SetStartPosition(startWaypoint);
     //}
 
-    public void SetStartPosition(Collider startPosition)
+    public void SetStartPosition(Collider startPosition, int idIn, int totalLapsIn) //NEW INPUTS
     {
         currentWaypoint = startPosition;
         transform.position = new Vector3(
@@ -100,7 +105,7 @@ public class CarMovement : MonoBehaviour
             currentWaypoint.transform.position.z);
         transform.rotation = currentWaypoint.transform.rotation;
 
-        //Set up lap stuff - NEW
+        //Set up lap stuff
         nextLapWaypoint = currentWaypoint.GetComponent<Waypoint>().firstLapWaypoint;
         nextLapWaypointInfo = nextLapWaypoint.GetComponent<Waypoint>();
         lapWaypoint = nextLapWaypointInfo.lapWaypointValue - 1;
@@ -108,6 +113,9 @@ public class CarMovement : MonoBehaviour
         {
             lapZero = true;
         }
+        //NEW
+        id = idIn;
+        totalLaps = totalLapsIn;
 
         UpdateWaypoint(currentWaypoint);
     }
@@ -137,22 +145,24 @@ public class CarMovement : MonoBehaviour
 
     public void ResetPosition()
     {
-        rb.linearVelocity = Vector3.zero;
-        rb.angularVelocity = Vector3.zero;
-
-        transform.position = resetPosition;
-        transform.rotation = resetRotation;
-
-        for (int i = 0; i < wheelColliders.Length; i++)
+        if (raceStarted) //NEW
         {
-            wheelColliders[i].rotationSpeed = 0f;
-        }
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
 
-        //NEW
-        respawnTime = 0;
-        rb.excludeLayers = carMask;
-        respawnImmunity = true;
-        transform.Find("Body").GetComponent<Renderer>().enabled = false;
+            transform.position = resetPosition;
+            transform.rotation = resetRotation;
+
+            for (int i = 0; i < wheelColliders.Length; i++)
+            {
+                wheelColliders[i].rotationSpeed = 0f;
+            }
+
+            respawnTime = 0;
+            rb.excludeLayers = carMask;
+            respawnImmunity = true;
+            transform.Find("Body").GetComponent<Renderer>().enabled = false;
+        }
     }
 
     void OnTriggerEnter(Collider collision)
@@ -165,7 +175,7 @@ public class CarMovement : MonoBehaviour
                 {
                     UpdateWaypoint(collision);
 
-                    //Reaching the next lapWaypoint - NEW
+                    //Reaching the next lapWaypoint
                     if (collision == nextLapWaypoint)
                     {
                         if (nextLapWaypointInfo.lapEnd)
@@ -176,21 +186,30 @@ public class CarMovement : MonoBehaviour
                             }
                             else
                             {
-                                lap += 1;
-                                //NEW
-                                lapTimePrevious += lapTimeCurrent;
+                                //lapTimeBest updated here now
                                 if (lapTimeBest == 0 || lapTimeBest > lapTimeCurrent)
                                 {
                                     lapTimeBest = lapTimeCurrent;
                                 }
-                                lapTimeCurrent = 0;
+                                if (lap == totalLaps && !finished) //NEW
+                                {
+                                    GameObject.Find("/LapManager").GetComponent<LapManager>()
+                                        .RegisterFinish(id, lapTimePrevious + lapTimeCurrent, lapTimeBest);
+                                    finished = true;
+                                }
+                                else
+                                {
+                                    lap += 1;
+                                    lapTimePrevious += lapTimeCurrent;
+                                    lapTimeCurrent = 0;
+                                }
                             }
                         }
 
                         lapWaypoint = nextLapWaypointInfo.lapWaypointValue;
                         nextLapWaypoint = nextLapWaypointInfo.nextLapWaypoint;
                         nextLapWaypointInfo = nextLapWaypoint.GetComponent<Waypoint>();
-                        //updates waypointDist instantly instead of waiting for FixedUpdate - NEW
+                        //updates waypointDist instantly instead of waiting for FixedUpdate
                         nextLapWaypointDist = Vector3.Distance(transform.position,
                             nextLapWaypoint.ClosestPoint(transform.position));
                     }
@@ -199,14 +218,13 @@ public class CarMovement : MonoBehaviour
                 }
             }
         }
-        //NEW
+
         if (collision.gameObject.tag == "CarTrigger")
         {
             carCollisions += 1;
         }
     }
 
-    //NEW
     void OnTriggerExit(Collider collision)
     {
         if (collision.gameObject.tag == "CarTrigger")
@@ -215,11 +233,21 @@ public class CarMovement : MonoBehaviour
         }
     }
 
+    //NEW
+    public void EnableRaceStarted()
+    {
+        rb.constraints = RigidbodyConstraints.None;
+        raceStarted = true;
+    }
+
     void FixedUpdate()
     {
-        //lapTime - NEW
-        lapTimeCurrent += Time.fixedDeltaTime;
-        lapTimeTotal = lapTimeCurrent + lapTimePrevious;
+        //lapTime
+        if (raceStarted) //NEW
+        {
+            lapTimeCurrent += Time.fixedDeltaTime;
+            lapTimeTotal = lapTimeCurrent + lapTimePrevious;
+        }
 
         //Disables the car's respawn immunity if enough time's passed
         //and it's not inside any other cars - NEW
@@ -234,7 +262,7 @@ public class CarMovement : MonoBehaviour
             }
         }
 
-        //Finds distance to the next lapWaypoint - NEW
+        //Finds distance to the next lapWaypoint
         nextLapWaypointDist = Vector3.Distance(transform.position,
             nextLapWaypoint.ClosestPoint(transform.position));
 
@@ -264,20 +292,23 @@ public class CarMovement : MonoBehaviour
 
         //checks if desired direction is opposite to current direction, and that neither current speed or motorIn are 0
         //If true, cause braking instead of accelerating
-        if (Mathf.Sign(motorIn) != Mathf.Sign(currentSpeed) && currentSpeed != 0f && motorIn != 0f)
+        if (raceStarted) //NEW
         {
-            for (int i=0;i<wheelColliders.Length;i++)
+            if (Mathf.Sign(motorIn) != Mathf.Sign(currentSpeed) && currentSpeed != 0f && motorIn != 0f)
             {
-                wheelColliders[i].motorTorque = 0f;
-                wheelColliders[i].brakeTorque = Mathf.Abs(motorIn * torqueBrake);
+                for (int i = 0; i < wheelColliders.Length; i++)
+                {
+                    wheelColliders[i].motorTorque = 0f;
+                    wheelColliders[i].brakeTorque = Mathf.Abs(motorIn * torqueBrake);
+                }
             }
-        }
-        else
-        {
-            for (int i = 0; i < wheelColliders.Length; i++)
+            else
             {
-                wheelColliders[i].motorTorque = motorIn * torqueMotor * currentSpeedFraction;
-                wheelColliders[i].brakeTorque = 0f;
+                for (int i = 0; i < wheelColliders.Length; i++)
+                {
+                    wheelColliders[i].motorTorque = motorIn * torqueMotor * currentSpeedFraction;
+                    wheelColliders[i].brakeTorque = 0f;
+                }
             }
         }
 
@@ -290,7 +321,7 @@ public class CarMovement : MonoBehaviour
             wheelModels[i].transform.Rotate(0, 0, 90);
         }
     }
-    void Update() //Sets values used to track position - NEW
+    void Update() //Sets values used to track position
     {
         lapPub = lap;
         lapWaypointPub = lapWaypoint;
