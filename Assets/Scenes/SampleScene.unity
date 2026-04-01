@@ -2521,8 +2521,8 @@ MonoBehaviour:
   - {fileID: 610621113}
   - {fileID: 839082373}
   - {fileID: 1726186783}
-  cars: 3
-  playerStartingPosition: 5
+  cars: 4
+  playerStartingPosition: 4
   playerCar: {fileID: 8698493926277310524, guid: 9b47d67e8dfb3f140989bb9b404d5eaf, type: 3}
   aiCar: {fileID: 8915396727444864800, guid: 94a94231704c8d84c91d59fa6b3bf1e4, type: 3}
 --- !u!4 &1208304036

@@ -51,6 +51,10 @@ public class CarMovement : MonoBehaviour
     float nextLapWaypointDist;
     bool lapZero;
     Waypoint nextLapWaypointInfo;
+    //NEW
+    public int lapPub, lapWaypointPub;
+    public float nextLapWaypointDistPub;
+    public int positionPub;
 
     //Lap time stuff - NEW
     float lapTimePrevious;
@@ -186,6 +190,9 @@ public class CarMovement : MonoBehaviour
                         lapWaypoint = nextLapWaypointInfo.lapWaypointValue;
                         nextLapWaypoint = nextLapWaypointInfo.nextLapWaypoint;
                         nextLapWaypointInfo = nextLapWaypoint.GetComponent<Waypoint>();
+                        //updates waypointDist instantly instead of waiting for FixedUpdate - NEW
+                        nextLapWaypointDist = Vector3.Distance(transform.position,
+                            nextLapWaypoint.ClosestPoint(transform.position));
                     }
 
                     break;
@@ -282,5 +289,11 @@ public class CarMovement : MonoBehaviour
             wheelModels[i].transform.rotation = wheelRot;
             wheelModels[i].transform.Rotate(0, 0, 90);
         }
+    }
+    void Update() //Sets values used to track position - NEW
+    {
+        lapPub = lap;
+        lapWaypointPub = lapWaypoint;
+        nextLapWaypointDistPub = nextLapWaypointDist;
     }
 }
