@@ -39,8 +39,8 @@ public class CarControlAI : MonoBehaviour
     Ray[] frontBackRays = new Ray[6];
     LayerMask waypointMask;
     RaycastHit rayHit;
+    float frontRayDist = 2.3f; //NEW
 
-    //NEW
     Ray waypointRotationRay;
     Vector3 waypointToCarPosition;
     float waypointToCarAngle;
@@ -209,24 +209,24 @@ public class CarControlAI : MonoBehaviour
 
     void Update()
     {
-        //Draw rays
-        frontBackRays[0] = new Ray(transform.position + (transform.right * -0.44f), transform.forward);
+        //Draw rays - CHANGED
+        frontBackRays[0] = new Ray(transform.position + (transform.right * -0.89f), transform.forward);
         frontBackRays[1] = new Ray(transform.position, transform.forward);
-        frontBackRays[2] = new Ray(transform.position + (transform.right * 0.44f), transform.forward);
+        frontBackRays[2] = new Ray(transform.position + (transform.right * 0.89f), transform.forward);
 
-        frontBackRays[3] = new Ray(transform.position + (transform.right * -0.44f), transform.forward * -1);
+        frontBackRays[3] = new Ray(transform.position + (transform.right * -0.89f), transform.forward * -1);
         frontBackRays[4] = new Ray(transform.position, transform.forward * -1);
-        frontBackRays[5] = new Ray(transform.position + (transform.right * 0.44f), transform.forward * -1);
+        frontBackRays[5] = new Ray(transform.position + (transform.right * 0.89f), transform.forward * -1);
 
-        waypointRotationRay = new Ray(transform.position, targetWaypoints[0].forward); //NEW
+        waypointRotationRay = new Ray(transform.position, targetWaypoints[0].forward);
 
         //Makes the rays visible in Scene view
         for (int i=0;i<6;i++)
         {
-            Debug.DrawRay(frontBackRays[i].origin, frontBackRays[i].direction * 1.7f, Color.yellow);
+            Debug.DrawRay(frontBackRays[i].origin, frontBackRays[i].direction * frontRayDist, Color.yellow); //CHANGED
         }
         Debug.DrawRay(waypointRotationRay.origin, 
-            waypointRotationRay.direction * 1000, Color.yellow); //NEW
+            waypointRotationRay.direction * 1000, Color.yellow);
 
         //check how long the car's been stationary
         if (rb.linearVelocity.magnitude < 0.5f)
@@ -244,7 +244,7 @@ public class CarControlAI : MonoBehaviour
         {
             for (int i=0;i<3;i++)
             {
-                if (Physics.Raycast(frontBackRays[i], out rayHit, 1.7f, ~(waypointMask)))
+                if (Physics.Raycast(frontBackRays[i], out rayHit, frontRayDist, ~(waypointMask))) //CHANGED
                 {
                     reversing = true;
                     break;
@@ -254,7 +254,7 @@ public class CarControlAI : MonoBehaviour
         //Disables reversing if the car's rear touches something
         for (int i = 3; i < 6; i++)
         {
-            if (Physics.Raycast(frontBackRays[i], out rayHit, 1.7f, ~(waypointMask)))
+            if (Physics.Raycast(frontBackRays[i], out rayHit, frontRayDist, ~(waypointMask))) //CHANGED
             {
                 reversing = false;
                 break;

@@ -32,6 +32,7 @@ public class CarMovement : MonoBehaviour
     Rigidbody rb;
     WheelCollider[] wheelColliders;
     Transform[] wheelModels;
+    Transform[] wheelBrakeModels; //NEW
 
     //For the wheels
     Vector3 wheelPos;
@@ -56,7 +57,7 @@ public class CarMovement : MonoBehaviour
     public float nextLapWaypointDistPub;
     public int positionPub;
 
-    //lap start/end stuff - NEW
+    //lap start/end stuff
     bool raceStarted = false;
     bool finished = false;
     int id, totalLaps;
@@ -81,6 +82,13 @@ public class CarMovement : MonoBehaviour
         wheelModels[2] = transform.Find("WheelBackLeft");
         wheelModels[3] = transform.Find("WheelBackRight");
 
+        //NEW
+        wheelBrakeModels = new Transform[wheelModels.Length];
+        for (int i=0;i<wheelModels.Length;i++)
+        {
+            wheelBrakeModels[i] = wheelModels[i].Find("brake");
+        }
+
         waypointLayer = LayerMask.NameToLayer("Waypoint");
         carMask = (1 << LayerMask.NameToLayer("Car"));
 
@@ -89,14 +97,14 @@ public class CarMovement : MonoBehaviour
         lapTimeTotal = 0;
         lapTimeBest = 0;
 
-        rb.constraints = RigidbodyConstraints.FreezeAll; //NEW
+        rb.constraints = RigidbodyConstraints.FreezeAll;
     }
     //void Start() - NO LONGER NEEDED
     //{
     //    SetStartPosition(startWaypoint);
     //}
 
-    public void SetStartPosition(Collider startPosition, int idIn, int totalLapsIn) //NEW INPUTS
+    public void SetStartPosition(Collider startPosition, int idIn, int totalLapsIn)
     {
         currentWaypoint = startPosition;
         transform.position = new Vector3(
@@ -113,7 +121,7 @@ public class CarMovement : MonoBehaviour
         {
             lapZero = true;
         }
-        //NEW
+        
         id = idIn;
         totalLaps = totalLapsIn;
 
@@ -145,7 +153,7 @@ public class CarMovement : MonoBehaviour
 
     public void ResetPosition()
     {
-        if (raceStarted) //NEW
+        if (raceStarted)
         {
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
@@ -161,7 +169,7 @@ public class CarMovement : MonoBehaviour
             respawnTime = 0;
             rb.excludeLayers = carMask;
             respawnImmunity = true;
-            transform.Find("Body").GetComponent<Renderer>().enabled = false;
+            transform.Find("car/body").GetComponent<Renderer>().enabled = false; //CHANGED
         }
     }
 
@@ -191,7 +199,7 @@ public class CarMovement : MonoBehaviour
                                 {
                                     lapTimeBest = lapTimeCurrent;
                                 }
-                                if (lap == totalLaps && !finished) //NEW
+                                if (lap == totalLaps && !finished)
                                 {
                                     GameObject.Find("/LapManager").GetComponent<LapManager>()
                                         .RegisterFinish(id, lapTimePrevious + lapTimeCurrent, lapTimeBest);
@@ -233,7 +241,7 @@ public class CarMovement : MonoBehaviour
         }
     }
 
-    //NEW
+    
     public void EnableRaceStarted()
     {
         rb.constraints = RigidbodyConstraints.None;
@@ -243,14 +251,14 @@ public class CarMovement : MonoBehaviour
     void FixedUpdate()
     {
         //lapTime
-        if (raceStarted) //NEW
+        if (raceStarted)
         {
             lapTimeCurrent += Time.fixedDeltaTime;
             lapTimeTotal = lapTimeCurrent + lapTimePrevious;
         }
 
         //Disables the car's respawn immunity if enough time's passed
-        //and it's not inside any other cars - NEW
+        //and it's not inside any other cars 
         if (respawnImmunity)
         {
             respawnTime += Time.fixedDeltaTime;
@@ -258,7 +266,7 @@ public class CarMovement : MonoBehaviour
             {
                 rb.excludeLayers = 0;
                 respawnImmunity = false;
-                transform.Find("Body").GetComponent<Renderer>().enabled = true;
+                transform.Find("car/body").GetComponent<Renderer>().enabled = true; //CHANGED
             }
         }
 
@@ -292,7 +300,7 @@ public class CarMovement : MonoBehaviour
 
         //checks if desired direction is opposite to current direction, and that neither current speed or motorIn are 0
         //If true, cause braking instead of accelerating
-        if (raceStarted) //NEW
+        if (raceStarted)
         {
             if (Mathf.Sign(motorIn) != Mathf.Sign(currentSpeed) && currentSpeed != 0f && motorIn != 0f)
             {
@@ -318,8 +326,16 @@ public class CarMovement : MonoBehaviour
             wheelColliders[i].GetWorldPose(out wheelPos, out wheelRot);
             wheelModels[i].transform.position = wheelPos;
             wheelModels[i].transform.rotation = wheelRot;
-            wheelModels[i].transform.Rotate(0, 0, 90);
+            //wheelModels[i].transform.Rotate(0, 0, 90); - NO LONGER NEEDED
+
+            //NEW
+            wheelBrakeModels[i].transform.rotation = wheelColliders[i].transform.rotation;
         }
+        wheelBrakeModels[0].transform.Rotate(0, -(steerIn * steerRange * steerRangeFraction) - 180, 0);
+        wheelBrakeModels[1].transform.Rotate(0, (steerIn * steerRange * steerRangeFraction) - 180, 0);
+        wheelBrakeModels[2].transform.Rotate(0, -180, 0);
+        wheelBrakeModels[3].transform.Rotate(0, -180, 0);
+
     }
     void Update() //Sets values used to track position
     {
