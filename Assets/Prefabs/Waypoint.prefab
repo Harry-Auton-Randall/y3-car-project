@@ -249,3 +249,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Waypoint
   nextWaypoints: []
+  lapEnd: 0
+  startBeforeLine: 0
+  firstLapWaypoint: {fileID: 0}
+  lapWaypointValue: 0
+  nextLapWaypoint: {fileID: 0}
