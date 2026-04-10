@@ -11,7 +11,7 @@ public class PlayerHudManager : MonoBehaviour
     TMPro.TextMeshProUGUI totalTimeText, currentTimeText, bestTimeText;
 
     //for the time formatting
-    int minute, second, ms;
+    //int minute, second, ms;
 
     void Awake()
     {
@@ -65,8 +65,10 @@ public class PlayerHudManager : MonoBehaviour
     }
 
     //function for formatting the time texts
-    string FormatTime(float input)
+    public static string FormatTime(float input) //PUBLIC AND STATIC NOW
     {
+        int minute, second, ms; //DECLARED HERE NOW
+
         //minute
         minute = Mathf.FloorToInt(input / 60);
 
@@ -79,5 +81,15 @@ public class PlayerHudManager : MonoBehaviour
         //toString("D2") ensures at least 2 digits, aka number 3 will be displayed as "03"
         return (minute.ToString("D2") + ":" + 
             second.ToString("D2") + ":" + ms.ToString("D2"));
+    }
+
+    public void Disable()
+    {
+        positionText.enabled = false;
+        speedText.enabled = false;
+        lapText.enabled = false;
+        totalTimeText.enabled = false;
+        currentTimeText.enabled = false;
+        bestTimeText.enabled = false;
     }
 }

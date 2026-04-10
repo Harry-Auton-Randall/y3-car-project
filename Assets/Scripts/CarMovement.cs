@@ -204,15 +204,28 @@ public class CarMovement : MonoBehaviour
                                     GameObject.Find("/LapManager").GetComponent<LapManager>()
                                         .RegisterFinish(id, lapTimePrevious + lapTimeCurrent, lapTimeBest);
                                     finished = true;
+                                    //NEW
+                                    if (isPlayer)
+                                    {
+                                        GameObject.Find("/LapManager").GetComponent<LapManager>()
+                                            .DisplayPlayerResults(id);
+                                        GetComponent<PlayerHudManager>().Disable();
+                                    }
                                 }
                                 else
                                 {
                                     lap += 1;
                                     lapTimePrevious += lapTimeCurrent;
                                     lapTimeCurrent = 0;
+                                    
+                                    if (lap == totalLaps && totalLaps != 1 && isPlayer)
+                                    {
+                                        StartCoroutine(GameObject.Find("/LapManager").GetComponent<LapManager>().LastLapAlert());
+                                    }
                                 }
                             }
                         }
+
 
                         lapWaypoint = nextLapWaypointInfo.lapWaypointValue;
                         nextLapWaypoint = nextLapWaypointInfo.nextLapWaypoint;

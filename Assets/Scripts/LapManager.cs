@@ -1,7 +1,8 @@
 using UnityEngine;
 using System;
-using System.Collections; //NEW
-using System.Collections.Generic; //NEW
+using System.Collections;
+using System.Collections.Generic;
+using TMPro; //NEW
 
 public class LapManager : MonoBehaviour
 {
@@ -14,16 +15,33 @@ public class LapManager : MonoBehaviour
     
     CarMovement[] carMovements;
     int[] carPositions;
+    List<int> stillRacing; //NEW
 
-    //NEW
     public int totalLaps = 3;
     float[] totalLapTimes;
     float[] bestLapTimes;
     List<int> finalPositions;
 
+    TMPro.TextMeshProUGUI countdownText;
+    TMPro.TextMeshProUGUI resultPositionText, resultTotalTimeText, resultBestTimeText; //NEW
+
 
     void Awake()
     {
+        countdownText = transform.Find("LapManagerCanvas/CountdownText")
+            .GetComponent<TMPro.TextMeshProUGUI>();
+        //NEW
+        resultPositionText = transform.Find("LapManagerCanvas/ResultPositionText")
+            .GetComponent<TMPro.TextMeshProUGUI>();
+        resultTotalTimeText = transform.Find("LapManagerCanvas/ResultTotalTimeText")
+            .GetComponent<TMPro.TextMeshProUGUI>();
+        resultBestTimeText = transform.Find("LapManagerCanvas/ResultBestTimeText")
+            .GetComponent<TMPro.TextMeshProUGUI>();
+
+        resultPositionText.enabled = false;
+        resultTotalTimeText.enabled = false;
+        resultBestTimeText.enabled = false;
+
         for (int i=0;i<lapWaypoints.Length;i++)
         {
             lapWaypoints[i].GetComponent<Waypoint>().lapWaypointValue = i;
@@ -45,7 +63,8 @@ public class LapManager : MonoBehaviour
         //initialise arrays
         carMovements = new CarMovement[cars];
         carPositions = new int[cars];
-        //NEW
+        stillRacing = new List<int>(cars); //NEW
+
         totalLapTimes = new float[cars];
         bestLapTimes = new float[cars];
         finalPositions = new List<int>(cars);
@@ -65,25 +84,26 @@ public class LapManager : MonoBehaviour
             }
             
             carMovements[i] = instance.GetComponent<CarMovement>();
-            carMovements[i].SetStartPosition(startWaypoints[i], i, totalLaps); //NEW INPUTS
+            carMovements[i].SetStartPosition(startWaypoints[i], i, totalLaps);
             carPositions[i] = i;
+            stillRacing.Add(i); //NEW
         }
 
-        //NEW
         StartCoroutine(StartRace());
     }
 
-    //NEW
     public void RegisterFinish(int idIn, float totalTimeIn, float bestTimeIn)
     {
         finalPositions.Add(idIn);
+        stillRacing.Remove(idIn); //NEW
         totalLapTimes[idIn] = totalTimeIn;
         bestLapTimes[idIn] = bestTimeIn;
     }
 
     void Update()
     {
-        Array.Sort(carPositions, (a, b) =>
+        //stillRacing is now sorted
+        stillRacing.Sort((a, b) =>
             (carMovements[b].lapPub, 
              carMovements[b].lapWaypointPub, 
              carMovements[a].nextLapWaypointDistPub)
@@ -93,19 +113,78 @@ public class LapManager : MonoBehaviour
              carMovements[b].nextLapWaypointDistPub))
         );
 
+        //NEW - copy results from finalPositions and stillRacing into carPositions
+        for (int i=0; i<finalPositions.Count; i++)
+        {
+            carPositions[i] = finalPositions[i];
+        }
+        for (int i=0; i<stillRacing.Count; i++)
+        {
+            carPositions[i + finalPositions.Count] = stillRacing[i];
+        }
+
         for (int i=0;i<carPositions.Length;i++)
         {
             carMovements[carPositions[i]].positionPub = i + 1;
         }
     }
 
-    //NEW
     IEnumerator StartRace()
     {
-        yield return new WaitForSeconds(3);
+        countdownText.text = "3";
+        yield return new WaitForSeconds(1);
+        countdownText.text = "2";
+        yield return new WaitForSeconds(1);
+        countdownText.text = "1";
+        yield return new WaitForSeconds(1);
+
         for (int i=0;i<carMovements.Length;i++)
         {
             carMovements[i].EnableRaceStarted();
         }
+
+        countdownText.text = "GO!";
+        yield return new WaitForSeconds(1);
+        countdownText.enabled = false;
+    }
+
+    public IEnumerator LastLapAlert()
+    {
+        countdownText.enabled = true;
+        countdownText.text = "Last Lap!";
+        yield return new WaitForSeconds(1);
+        countdownText.enabled = false;
+    }
+
+    //NEW
+    public void DisplayPlayerResults(int idIn)
+    {
+        resultPositionText.enabled = true;
+        resultTotalTimeText.enabled = true;
+        resultBestTimeText.enabled = true;
+
+        int finalPosition = finalPositions.IndexOf(idIn) + 1;
+
+        switch (finalPosition)
+        {
+            case 1:
+                resultPositionText.text = "You came 1st!";
+                break;
+            case 2:
+                resultPositionText.text = "You came 2nd!";
+                break;
+            case 3:
+                resultPositionText.text = "You came 3rd!";
+                break;
+            default:
+                resultPositionText.text = ("You came " + finalPosition + "th!");
+                break;
+        }
+
+        resultTotalTimeText.text = ("Total time - " +
+            PlayerHudManager.FormatTime(totalLapTimes[idIn]));
+
+        resultBestTimeText.text = ("Best lap - " +
+            PlayerHudManager.FormatTime(bestLapTimes[idIn]));
     }
 }
