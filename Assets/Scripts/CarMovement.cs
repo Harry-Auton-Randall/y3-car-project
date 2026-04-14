@@ -32,7 +32,7 @@ public class CarMovement : MonoBehaviour
     Rigidbody rb;
     WheelCollider[] wheelColliders;
     Transform[] wheelModels;
-    Transform[] wheelBrakeModels; //NEW
+    Transform[] wheelBrakeModels;
 
     //For the wheels
     Vector3 wheelPos;
@@ -66,9 +66,18 @@ public class CarMovement : MonoBehaviour
     float lapTimePrevious;
     public float lapTimeCurrent, lapTimeTotal, lapTimeBest;
 
+    //Sfx stuff - NEW
+    AudioSource audioSource;
+    float[] gearRanges = new float[] { 5, 7.5f, 18, 31.5f, 48, 67.5f, 90 };
+    float gearAmount;
+    float prevSpeed;
+    float gearAdj;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
+
+        audioSource = transform.Find("EngineAudio").GetComponent<AudioSource>(); //NEW
 
         wheelColliders = new WheelCollider[4];
         wheelColliders[0] = transform.Find("WheelFrontLeftCollider").GetComponent<WheelCollider>();
@@ -82,7 +91,6 @@ public class CarMovement : MonoBehaviour
         wheelModels[2] = transform.Find("WheelBackLeft");
         wheelModels[3] = transform.Find("WheelBackRight");
 
-        //NEW
         wheelBrakeModels = new Transform[wheelModels.Length];
         for (int i=0;i<wheelModels.Length;i++)
         {
@@ -169,7 +177,7 @@ public class CarMovement : MonoBehaviour
             respawnTime = 0;
             rb.excludeLayers = carMask;
             respawnImmunity = true;
-            transform.Find("car/body").GetComponent<Renderer>().enabled = false; //CHANGED
+            transform.Find("car/body").GetComponent<Renderer>().enabled = false;
         }
     }
 
@@ -204,7 +212,7 @@ public class CarMovement : MonoBehaviour
                                     GameObject.Find("/LapManager").GetComponent<LapManager>()
                                         .RegisterFinish(id, lapTimePrevious + lapTimeCurrent, lapTimeBest);
                                     finished = true;
-                                    //NEW
+                                    
                                     if (isPlayer)
                                     {
                                         GameObject.Find("/LapManager").GetComponent<LapManager>()
@@ -263,6 +271,8 @@ public class CarMovement : MonoBehaviour
 
     void FixedUpdate()
     {
+        prevSpeed = currentSpeed; //NEW
+
         //lapTime
         if (raceStarted)
         {
@@ -293,6 +303,18 @@ public class CarMovement : MonoBehaviour
         {
             currentSpeed = 0f;
         }
+
+        //NEW - Figure out if the car's speeding up or slowing down
+        if (currentSpeed < prevSpeed)
+        {
+            gearAdj = -5;
+        }
+        else if (currentSpeed > prevSpeed)
+        {
+            gearAdj = 5;
+        }
+        else { gearAdj = 0; }
+
         //Finds value from 1 to 0 depending on how close currentSpeed is to maxSpeed
         if (currentSpeed >= 0)
         {
@@ -341,7 +363,6 @@ public class CarMovement : MonoBehaviour
             wheelModels[i].transform.rotation = wheelRot;
             //wheelModels[i].transform.Rotate(0, 0, 90); - NO LONGER NEEDED
 
-            //NEW
             wheelBrakeModels[i].transform.rotation = wheelColliders[i].transform.rotation;
         }
         wheelBrakeModels[0].transform.Rotate(0, -(steerIn * steerRange * steerRangeFraction) - 180, 0);
@@ -355,5 +376,27 @@ public class CarMovement : MonoBehaviour
         lapPub = lap;
         lapWaypointPub = lapWaypoint;
         nextLapWaypointDistPub = nextLapWaypointDist;
+
+        //NEW
+        if (currentSpeed < 0)
+        {
+            gearAmount = Mathf.InverseLerp(0, maxSpeedReverse, -currentSpeed);
+        }
+        else
+        {
+            gearAmount = 1; //In case currentSpeed > the highest gear range -
+                            //if not, this will be overridden by the for-if combo below
+
+            for(int i=1;i<gearRanges.Length;i++)
+            {
+                if (currentSpeed < (gearRanges[i] + gearAdj))
+                {
+                    gearAmount = Mathf.InverseLerp(gearRanges[i-1] - 5, gearRanges[i] + 5, currentSpeed);
+                    break;
+                }
+            }
+        }
+
+        audioSource.pitch = Mathf.Lerp(0.5f, 1.5f, gearAmount);
     }
 }
