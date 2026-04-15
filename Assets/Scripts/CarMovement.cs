@@ -68,10 +68,9 @@ public class CarMovement : MonoBehaviour
 
     //Sfx stuff - NEW
     AudioSource audioSource;
-    float[] gearRanges = new float[] { 5, 7.5f, 18, 31.5f, 48, 67.5f, 90 };
-    float gearAmount;
-    float prevSpeed;
-    float gearAdj;
+    float[] gearSpeeds = new float[] { 3.4992f, 5.832f, 9.72f, 16.2f, 27, 45 };
+    float revs;
+    int gear = 0;
 
     void Awake()
     {
@@ -271,8 +270,6 @@ public class CarMovement : MonoBehaviour
 
     void FixedUpdate()
     {
-        prevSpeed = currentSpeed; //NEW
-
         //lapTime
         if (raceStarted)
         {
@@ -303,17 +300,6 @@ public class CarMovement : MonoBehaviour
         {
             currentSpeed = 0f;
         }
-
-        //NEW - Figure out if the car's speeding up or slowing down
-        if (currentSpeed < prevSpeed)
-        {
-            gearAdj = -5;
-        }
-        else if (currentSpeed > prevSpeed)
-        {
-            gearAdj = 5;
-        }
-        else { gearAdj = 0; }
 
         //Finds value from 1 to 0 depending on how close currentSpeed is to maxSpeed
         if (currentSpeed >= 0)
@@ -378,25 +364,31 @@ public class CarMovement : MonoBehaviour
         nextLapWaypointDistPub = nextLapWaypointDist;
 
         //NEW
-        if (currentSpeed < 0)
-        {
-            gearAmount = Mathf.InverseLerp(0, maxSpeedReverse, -currentSpeed);
+        if (currentSpeed >= 0)
+        { 
+            ShiftGear();
         }
         else
         {
-            gearAmount = 1; //In case currentSpeed > the highest gear range -
-                            //if not, this will be overridden by the for-if combo below
-
-            for(int i=1;i<gearRanges.Length;i++)
-            {
-                if (currentSpeed < (gearRanges[i] + gearAdj))
-                {
-                    gearAmount = Mathf.InverseLerp(gearRanges[i-1] - 5, gearRanges[i] + 5, currentSpeed);
-                    break;
-                }
-            }
+            revs = (-currentSpeed / maxSpeedReverse) * 2;
         }
+        revs = Mathf.Clamp(revs, 0.25f, 2f);
+        audioSource.pitch = 0.25f + (revs * 0.75f);
+    }
 
-        audioSource.pitch = Mathf.Lerp(0.5f, 1.5f, gearAmount);
+    //NEW
+    void ShiftGear()
+    {
+        revs = currentSpeed / gearSpeeds[gear];
+        if (gear != 0 && revs < (0.6f))
+        {
+            gear -= 1;
+            ShiftGear();
+        }
+        else if (gear != (gearSpeeds.Length - 1) && revs > (5f / 3f))
+        {
+            gear += 1;
+            ShiftGear();
+        }
     }
 }
