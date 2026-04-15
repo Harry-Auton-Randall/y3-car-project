@@ -1001,6 +1001,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1697625218593646081}
+  - component: {fileID: 2877451055828686789}
   m_Layer: 0
   m_Name: CameraBase
   m_TagString: Untagged
@@ -1024,6 +1025,14 @@ Transform:
   - {fileID: 5047368489670281416}
   m_Father: {fileID: 9219829471885491054}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!81 &2877451055828686789
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8063885554002344328}
+  m_Enabled: 1
 --- !u!1 &9128717808803460319
 GameObject:
   m_ObjectHideFlags: 0
@@ -1230,9 +1239,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7826984790248136044, guid: efe18e6092d986e46a50e2bc08b12e1f, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6680520705945817723}
-    - targetCorrespondingSourceObject: {fileID: 7826984790248136044, guid: efe18e6092d986e46a50e2bc08b12e1f, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 8012629408970043213}
   m_SourcePrefab: {fileID: 100100000, guid: efe18e6092d986e46a50e2bc08b12e1f, type: 3}
 --- !u!1 &8698493926277310524 stripped
 GameObject:
@@ -1277,14 +1283,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7090c27e9358fed4a995ca75614268df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHudManager
---- !u!81 &8012629408970043213
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8698493926277310524}
-  m_Enabled: 1
 --- !u!4 &9219829471885491054 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7771842000746155582, guid: efe18e6092d986e46a50e2bc08b12e1f, type: 3}

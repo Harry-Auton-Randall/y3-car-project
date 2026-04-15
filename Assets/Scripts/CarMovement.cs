@@ -66,10 +66,11 @@ public class CarMovement : MonoBehaviour
     float lapTimePrevious;
     public float lapTimeCurrent, lapTimeTotal, lapTimeBest;
 
-    //Sfx stuff - NEW
+    //Sfx stuff
     AudioSource audioSource;
     float[] gearSpeeds = new float[] { 3.4992f, 5.832f, 9.72f, 16.2f, 27, 45 };
     float revs;
+    float revsGrad; //NEW
     int gear = 0;
 
     void Awake()
@@ -357,13 +358,12 @@ public class CarMovement : MonoBehaviour
         wheelBrakeModels[3].transform.Rotate(0, -180, 0);
 
     }
-    void Update() //Sets values used to track position
+    void Update()
     {
         lapPub = lap;
         lapWaypointPub = lapWaypoint;
         nextLapWaypointDistPub = nextLapWaypointDist;
 
-        //NEW
         if (currentSpeed >= 0)
         { 
             ShiftGear();
@@ -372,8 +372,12 @@ public class CarMovement : MonoBehaviour
         {
             revs = (-currentSpeed / maxSpeedReverse) * 2;
         }
-        revs = Mathf.Clamp(revs, 0.25f, 2f);
-        audioSource.pitch = 0.25f + (revs * 0.75f);
+        revs = Mathf.Clamp(revs, 0f, 2f);
+
+        //NEW
+        revsGrad = Mathf.MoveTowards(revsGrad, revs, 10 * Time.deltaTime);
+
+        audioSource.pitch = 0.25f + (revsGrad * 0.75f); //CHANGED
     }
 
     //NEW
