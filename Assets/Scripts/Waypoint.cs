@@ -4,6 +4,8 @@ public class Waypoint : MonoBehaviour
 {
     public Collider[] nextWaypoints;
 
+    public float offsetLimitLeft, offsetLimitRight;
+
     //NEW
     public bool lapEnd = false;
 

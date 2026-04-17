@@ -19,6 +19,10 @@ public class CarControlAI : MonoBehaviour
     Collider[] nextWaypoints;
     Transform[] targetWaypoints;
 
+    Transform targetWaypointRandomPos;
+    float targetWaypointOffset;
+    public float waypointOffsetMult = 1f; //NEW
+
     Vector3[] waypointTurningEnds;
     float[] waypointTurningRadii;
     float[] waypointTurningSpeeds;
@@ -39,7 +43,7 @@ public class CarControlAI : MonoBehaviour
     Ray[] frontBackRays = new Ray[6];
     LayerMask waypointMask;
     RaycastHit rayHit;
-    float frontRayDist = 2.3f; //NEW
+    float frontRayDist = 2.3f;
 
     Ray waypointRotationRay;
     Vector3 waypointToCarPosition;
@@ -50,6 +54,7 @@ public class CarControlAI : MonoBehaviour
         carMovement = GetComponent<CarMovement>();
         rb = GetComponent<Rigidbody>();
         waypointMask = (1 << LayerMask.NameToLayer("Waypoint"));
+        targetWaypointRandomPos = new GameObject("AiCarTargetWaypointPos").transform; //NEW
     }
 
     public void UpdateWaypoint(Collider currentWaypointIn, Collider[] nextWaypointsIn)
@@ -106,6 +111,10 @@ public class CarControlAI : MonoBehaviour
         {
             RecalcWaypoints(nextWaypointsIn);
         }
+
+        targetWaypointOffset = Random.Range(
+            -(targetWaypoints[0].GetComponent<Waypoint>().offsetLimitLeft),
+            targetWaypoints[0].GetComponent<Waypoint>().offsetLimitRight); //NEW
     }
 
     void RecalcWaypoints(Collider[] nextWaypointsIn2)
@@ -269,12 +278,18 @@ public class CarControlAI : MonoBehaviour
             reversing = false;
         }
 
-        //Find the car's position/angle relative to the next waypoint - NEW
-        waypointToCarPosition = targetWaypoints[0].InverseTransformPoint(transform.position);
+        //targetWaypointRandomPos is set to the transform of the targetWaypoint,
+        // + some random deviation on its x axis
+        targetWaypointRandomPos.position = targetWaypoints[0].position
+            + (targetWaypoints[0].right * targetWaypointOffset * waypointOffsetMult); //CHANGED
+        targetWaypointRandomPos.rotation = targetWaypoints[0].rotation;
+
+        //Find the car's position/angle relative to the next waypoint
+        waypointToCarPosition = targetWaypointRandomPos
+            .InverseTransformPoint(transform.position); //CHANGED
         waypointToCarPosition.y = 0;
         waypointToCarAngle = Vector3.Angle(Vector3.forward * -1, waypointToCarPosition);
 
-        //NEW
         //get the angle between the car's rotation and waypointDirection
         //waypointDirection is either its position or the direction its facing
         if (Physics.Raycast(waypointRotationRay, out rayHit, Mathf.Infinity, waypointMask)
@@ -284,7 +299,8 @@ public class CarControlAI : MonoBehaviour
         }
         else
         {
-            waypointDirection = transform.InverseTransformPoint(targetWaypoints[0].position);
+            waypointDirection = transform.InverseTransformPoint
+                (targetWaypointRandomPos.position); //CHANGED
         }
         waypointDirection.y = 0;
         waypointAngle = Vector3.SignedAngle(Vector3.forward, waypointDirection, Vector3.up);

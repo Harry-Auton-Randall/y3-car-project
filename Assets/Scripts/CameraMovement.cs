@@ -12,6 +12,9 @@ public class CameraMovement : MonoBehaviour
     public float camRotSpeed = 18.0f;
     float camRotDist;
 
+    float camRotXGrad; //NEW
+    float camRotXSpeed = 5; //NEW
+
     Rigidbody rb;
     Transform camBase, camBase0, camBase1;
 
@@ -52,16 +55,21 @@ public class CameraMovement : MonoBehaviour
             camBase0.rotation = Quaternion.identity;
         }
 
-        //Clamps camBase0's x rotation between 30 and -30
+        //NEW - reduces camBase0RotX for slow movements
+        camRotXGrad = moveDir.magnitude / camRotXSpeed;
+        camRotXGrad = Mathf.Clamp(camRotXGrad, 0f, 1f);
+
+        //Clamps camBase0's x rotation between 30 and -30, and accounts for camRotXGrad
         camBase0RotX = camBase0.eulerAngles.x;
         if (camBase0RotX > 180)
         {
-            camBase0RotX = Mathf.Clamp(camBase0RotX, 330, 360);
+            camBase0RotX = Mathf.Clamp(camBase0RotX, 360f - (30 * camRotXGrad), 360);
         }
         else
         {
-            camBase0RotX = Mathf.Clamp(camBase0RotX, 0, 30);
+            camBase0RotX = Mathf.Clamp(camBase0RotX, 0, 30 * camRotXGrad);
         }
+
         camBase0.rotation = Quaternion.Euler(camBase0RotX, camBase0.eulerAngles.y, camBase0.eulerAngles.z);
 
         //Rotates camBase1 to point in direction of car + input
