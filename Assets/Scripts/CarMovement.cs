@@ -45,6 +45,8 @@ public class CarMovement : MonoBehaviour
     LayerMask carMask;
     int carCollisions;
 
+    LapManager lapManager; //NEW
+
     //Lap stuff
     int lap = 1;
     int lapWaypoint;
@@ -70,14 +72,17 @@ public class CarMovement : MonoBehaviour
     AudioSource audioSource;
     float[] gearSpeeds = new float[] { 3.4992f, 5.832f, 9.72f, 16.2f, 27, 45 };
     float revs;
-    float revsGrad; //NEW
+    float revsGrad;
     int gear = 0;
+    float[] wheelSpinSpeeds = new float[4]; //NEW
+    float avgWheelSpinSpeed; //NEW
 
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
 
-        audioSource = transform.Find("EngineAudio").GetComponent<AudioSource>(); //NEW
+        audioSource = transform.Find("EngineAudio").GetComponent<AudioSource>();
+        lapManager = GameObject.Find("/LapManager").GetComponent<LapManager>(); //NEW
 
         wheelColliders = new WheelCollider[4];
         wheelColliders[0] = transform.Find("WheelFrontLeftCollider").GetComponent<WheelCollider>();
@@ -209,14 +214,12 @@ public class CarMovement : MonoBehaviour
                                 }
                                 if (lap == totalLaps && !finished)
                                 {
-                                    GameObject.Find("/LapManager").GetComponent<LapManager>()
-                                        .RegisterFinish(id, lapTimePrevious + lapTimeCurrent, lapTimeBest);
+                                    lapManager.RegisterFinish(id, lapTimePrevious + lapTimeCurrent, lapTimeBest); //CHANGED
                                     finished = true;
                                     
                                     if (isPlayer)
                                     {
-                                        GameObject.Find("/LapManager").GetComponent<LapManager>()
-                                            .DisplayPlayerResults(id);
+                                        lapManager.DisplayPlayerResults(id); //CHANGED
                                         GetComponent<PlayerHudManager>().Disable();
                                     }
                                 }
@@ -225,10 +228,16 @@ public class CarMovement : MonoBehaviour
                                     lap += 1;
                                     lapTimePrevious += lapTimeCurrent;
                                     lapTimeCurrent = 0;
+
+                                    //NEW
+                                    if (isPlayer && !finished)
+                                    {
+                                        lapManager.LapUpdateSound();
+                                    }
                                     
                                     if (lap == totalLaps && totalLaps != 1 && isPlayer)
                                     {
-                                        StartCoroutine(GameObject.Find("/LapManager").GetComponent<LapManager>().LastLapAlert());
+                                        StartCoroutine(lapManager.LastLapAlert()); //CHANGED
                                     }
                                 }
                             }
@@ -364,7 +373,32 @@ public class CarMovement : MonoBehaviour
         lapWaypointPub = lapWaypoint;
         nextLapWaypointDistPub = nextLapWaypointDist;
 
-        if (currentSpeed >= 0)
+        //NEW
+        avgWheelSpinSpeed = 0;
+        for (int i=0;i<4;i++)
+        {
+            wheelSpinSpeeds[i] = 2 * Mathf.PI * wheelColliders[i].radius 
+                * (wheelColliders[i].rotationSpeed / 360f);
+
+            avgWheelSpinSpeed += wheelSpinSpeeds[i];
+        }
+        avgWheelSpinSpeed /= 4;
+
+        //NEW
+        if (!(wheelColliders[0].isGrounded || wheelColliders[1].isGrounded 
+            || wheelColliders[2].isGrounded || wheelColliders[3].isGrounded))
+        {
+            if (avgWheelSpinSpeed >= 0)
+            {
+                revs = (avgWheelSpinSpeed / maxSpeed) * 2;
+            }
+            else
+            {
+                revs = (-avgWheelSpinSpeed / maxSpeedReverse) * 2;
+            }
+        }
+
+        else if (currentSpeed >= 0)
         { 
             ShiftGear();
         }
@@ -374,13 +408,11 @@ public class CarMovement : MonoBehaviour
         }
         revs = Mathf.Clamp(revs, 0f, 2f);
 
-        //NEW
         revsGrad = Mathf.MoveTowards(revsGrad, revs, 10 * Time.deltaTime);
 
         audioSource.pitch = 0.25f + (revsGrad * 0.75f); //CHANGED
     }
 
-    //NEW
     void ShiftGear()
     {
         revs = currentSpeed / gearSpeeds[gear];

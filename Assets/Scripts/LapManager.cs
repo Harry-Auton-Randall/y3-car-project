@@ -2,7 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using TMPro; //NEW
+using TMPro;
 
 public class LapManager : MonoBehaviour
 {
@@ -15,7 +15,7 @@ public class LapManager : MonoBehaviour
     
     CarMovement[] carMovements;
     int[] carPositions;
-    List<int> stillRacing; //NEW
+    List<int> stillRacing;
 
     public int totalLaps = 3;
     float[] totalLapTimes;
@@ -23,14 +23,18 @@ public class LapManager : MonoBehaviour
     List<int> finalPositions;
 
     TMPro.TextMeshProUGUI countdownText;
-    TMPro.TextMeshProUGUI resultPositionText, resultTotalTimeText, resultBestTimeText; //NEW
+    TMPro.TextMeshProUGUI resultPositionText, resultTotalTimeText, resultBestTimeText;
 
+    //Sfx stuff - NEW
+    AudioSource audioSource;
+    public AudioClip ding, ding2;
 
     void Awake()
     {
+        audioSource = transform.Find("LapAudio").GetComponent<AudioSource>(); //NEW;
+
         countdownText = transform.Find("LapManagerCanvas/CountdownText")
             .GetComponent<TMPro.TextMeshProUGUI>();
-        //NEW
         resultPositionText = transform.Find("LapManagerCanvas/ResultPositionText")
             .GetComponent<TMPro.TextMeshProUGUI>();
         resultTotalTimeText = transform.Find("LapManagerCanvas/ResultTotalTimeText")
@@ -63,7 +67,7 @@ public class LapManager : MonoBehaviour
         //initialise arrays
         carMovements = new CarMovement[cars];
         carPositions = new int[cars];
-        stillRacing = new List<int>(cars); //NEW
+        stillRacing = new List<int>(cars);
 
         totalLapTimes = new float[cars];
         bestLapTimes = new float[cars];
@@ -86,7 +90,7 @@ public class LapManager : MonoBehaviour
             carMovements[i] = instance.GetComponent<CarMovement>();
             carMovements[i].SetStartPosition(startWaypoints[i], i, totalLaps);
             carPositions[i] = i;
-            stillRacing.Add(i); //NEW
+            stillRacing.Add(i);
         }
 
         StartCoroutine(StartRace());
@@ -95,7 +99,7 @@ public class LapManager : MonoBehaviour
     public void RegisterFinish(int idIn, float totalTimeIn, float bestTimeIn)
     {
         finalPositions.Add(idIn);
-        stillRacing.Remove(idIn); //NEW
+        stillRacing.Remove(idIn);
         totalLapTimes[idIn] = totalTimeIn;
         bestLapTimes[idIn] = bestTimeIn;
     }
@@ -131,11 +135,21 @@ public class LapManager : MonoBehaviour
 
     IEnumerator StartRace()
     {
+        //NEW
+        countdownText.enabled = false;
+        yield return new WaitForSeconds(5);
+        countdownText.enabled = true;
+
         countdownText.text = "3";
+        audioSource.PlayOneShot(ding, 1f); //NEW
         yield return new WaitForSeconds(1);
+
         countdownText.text = "2";
+        audioSource.PlayOneShot(ding); //NEW
         yield return new WaitForSeconds(1);
+
         countdownText.text = "1";
+        audioSource.PlayOneShot(ding); //NEW
         yield return new WaitForSeconds(1);
 
         for (int i=0;i<carMovements.Length;i++)
@@ -144,7 +158,9 @@ public class LapManager : MonoBehaviour
         }
 
         countdownText.text = "GO!";
+        audioSource.PlayOneShot(ding2); //NEW
         yield return new WaitForSeconds(1);
+
         countdownText.enabled = false;
     }
 
@@ -156,7 +172,6 @@ public class LapManager : MonoBehaviour
         countdownText.enabled = false;
     }
 
-    //NEW
     public void DisplayPlayerResults(int idIn)
     {
         resultPositionText.enabled = true;
@@ -186,5 +201,13 @@ public class LapManager : MonoBehaviour
 
         resultBestTimeText.text = ("Best lap - " +
             PlayerHudManager.FormatTime(bestLapTimes[idIn]));
+
+        audioSource.PlayOneShot(ding2); //NEW
+    }
+
+    //NEW
+    public void LapUpdateSound()
+    {
+        audioSource.PlayOneShot(ding, 0.5f);
     }
 }
