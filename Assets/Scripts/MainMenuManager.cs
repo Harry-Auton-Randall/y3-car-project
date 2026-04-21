@@ -1,12 +1,17 @@
 using UnityEngine;
+using System.Collections.Generic;
+using TMPro;
 
 public class MainMenuManager : MonoBehaviour
 {
-    //NEW
     GameObject[] panels;
     int currentPanel = 0;
 
-    //NEW
+    List<TrackInfo> trackInfos = new List<TrackInfo>();
+    int currentTrack = 0;
+    TMPro.TextMeshProUGUI trackNameText, trackMaxRacersText;
+
+
     void Awake()
     {
         panels = new GameObject[]
@@ -14,10 +19,24 @@ public class MainMenuManager : MonoBehaviour
             GameObject.Find("MenuCanvas/TitlePanel"),
             GameObject.Find("MenuCanvas/TrackSelectPanel")
         };
+
+        trackNameText = panels[1].transform.Find("TrackNameText")
+            .GetComponent<TMPro.TextMeshProUGUI>();
+        trackMaxRacersText = panels[1].transform.Find("TrackMaxRacersText")
+            .GetComponent<TMPro.TextMeshProUGUI>();
+
+
+        trackInfos.Add(new TrackInfo("Track 1", 4, null, null));
+        trackInfos.Add(new TrackInfo("Track 2", 8, null, null));
+        trackInfos.Add(new TrackInfo("Track 3", 2, null, null));
+        trackInfos.Add(new TrackInfo("Track with Unusual Name", 99, null, null));
+
+
+        DisplayTrackInfo();
+
         SwitchPanel();
     }
 
-    //NEW
     void SwitchPanel()
     {
         for (int i = 0; i < panels.Length; i++)
@@ -29,7 +48,6 @@ public class MainMenuManager : MonoBehaviour
 
     public void TitlePlayPressed()
     {
-        //NEW
         currentPanel = 1;
         SwitchPanel();
     }
@@ -42,11 +60,23 @@ public class MainMenuManager : MonoBehaviour
         Debug.Log("Quit pressed in Title");
     }
 
-    //NEW
     public void TrackReturnPressed()
     {
         currentPanel = 0;
         SwitchPanel();
+    }
+    void DisplayTrackInfo()
+    {
+        trackNameText.text = trackInfos[currentTrack].name;
+        trackMaxRacersText.text = ("Max. " + trackInfos[currentTrack].maxRacers + " Racers");
+    }
+    public void SwitchCurrentTrack(int amount)
+    {
+        currentTrack += amount;
+        if (currentTrack < 0) { currentTrack = trackInfos.Count - 1; }
+        else if (currentTrack >= trackInfos.Count) { currentTrack = 0; }
+
+        DisplayTrackInfo();
     }
 }
 
