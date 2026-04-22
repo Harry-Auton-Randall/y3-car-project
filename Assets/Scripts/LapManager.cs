@@ -25,13 +25,22 @@ public class LapManager : MonoBehaviour
     TMPro.TextMeshProUGUI countdownText;
     TMPro.TextMeshProUGUI resultPositionText, resultTotalTimeText, resultBestTimeText;
 
-    //Sfx stuff - NEW
+    //Sfx stuff
     AudioSource audioSource;
     public AudioClip ding, ding2;
 
+    RaceData raceData; //NEW
+
     void Awake()
     {
-        audioSource = transform.Find("LapAudio").GetComponent<AudioSource>(); //NEW;
+        //NEW
+        raceData = GameObject.Find("/RaceDataPasser").GetComponent<RaceData>();
+
+        totalLaps = raceData.lapCount;
+        cars = raceData.carCount;
+        playerStartingPosition = raceData.playerStartingPos;
+
+        audioSource = transform.Find("LapAudio").GetComponent<AudioSource>();
 
         countdownText = transform.Find("LapManagerCanvas/CountdownText")
             .GetComponent<TMPro.TextMeshProUGUI>();
@@ -117,7 +126,7 @@ public class LapManager : MonoBehaviour
              carMovements[b].nextLapWaypointDistPub))
         );
 
-        //NEW - copy results from finalPositions and stillRacing into carPositions
+        //copy results from finalPositions and stillRacing into carPositions
         for (int i=0; i<finalPositions.Count; i++)
         {
             carPositions[i] = finalPositions[i];
@@ -135,21 +144,21 @@ public class LapManager : MonoBehaviour
 
     IEnumerator StartRace()
     {
-        //NEW
+        
         countdownText.enabled = false;
         yield return new WaitForSeconds(5);
         countdownText.enabled = true;
 
         countdownText.text = "3";
-        audioSource.PlayOneShot(ding, 1f); //NEW
+        audioSource.PlayOneShot(ding, 1f);
         yield return new WaitForSeconds(1);
 
         countdownText.text = "2";
-        audioSource.PlayOneShot(ding); //NEW
+        audioSource.PlayOneShot(ding);
         yield return new WaitForSeconds(1);
 
         countdownText.text = "1";
-        audioSource.PlayOneShot(ding); //NEW
+        audioSource.PlayOneShot(ding);
         yield return new WaitForSeconds(1);
 
         for (int i=0;i<carMovements.Length;i++)
@@ -158,7 +167,7 @@ public class LapManager : MonoBehaviour
         }
 
         countdownText.text = "GO!";
-        audioSource.PlayOneShot(ding2); //NEW
+        audioSource.PlayOneShot(ding2);
         yield return new WaitForSeconds(1);
 
         countdownText.enabled = false;
@@ -202,7 +211,7 @@ public class LapManager : MonoBehaviour
         resultBestTimeText.text = ("Best lap - " +
             PlayerHudManager.FormatTime(bestLapTimes[idIn]));
 
-        audioSource.PlayOneShot(ding2); //NEW
+        audioSource.PlayOneShot(ding2);
     }
 
     //NEW

@@ -1,6 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
 using TMPro;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class MainMenuManager : MonoBehaviour
 {
@@ -10,7 +12,9 @@ public class MainMenuManager : MonoBehaviour
     List<TrackInfo> trackInfos = new List<TrackInfo>();
     int currentTrack = 0;
     TMPro.TextMeshProUGUI trackNameText, trackMaxRacersText;
+    RawImage trackImage;
 
+    RaceData raceData;
 
     void Awake()
     {
@@ -24,12 +28,19 @@ public class MainMenuManager : MonoBehaviour
             .GetComponent<TMPro.TextMeshProUGUI>();
         trackMaxRacersText = panels[1].transform.Find("TrackMaxRacersText")
             .GetComponent<TMPro.TextMeshProUGUI>();
+        trackImage = panels[1].transform.Find("TrackImage")
+            .GetComponent<RawImage>();
 
+        raceData = GameObject.Find("/RaceDataPasser").GetComponent<RaceData>();
 
-        trackInfos.Add(new TrackInfo("Track 1", 4, null, null));
-        trackInfos.Add(new TrackInfo("Track 2", 8, null, null));
-        trackInfos.Add(new TrackInfo("Track 3", 2, null, null));
-        trackInfos.Add(new TrackInfo("Track with Unusual Name", 99, null, null));
+        trackInfos.Add(new TrackInfo("Track 1", 4, 
+            Resources.Load("TrackImages/track1Image", typeof(Texture2D)) as Texture2D, "Track1")); //CHANGED
+        trackInfos.Add(new TrackInfo("Track 2", 8,
+            Resources.Load("TrackImages/track2Image", typeof(Texture2D)) as Texture2D, null));
+        trackInfos.Add(new TrackInfo("Track 3", 2,
+            Resources.Load("TrackImages/track3Image", typeof(Texture2D)) as Texture2D, null));
+        trackInfos.Add(new TrackInfo("Track with Unusual Name", 99,
+            Resources.Load("TrackImages/trackUnusualImage", typeof(Texture2D)) as Texture2D, null));
 
 
         DisplayTrackInfo();
@@ -69,6 +80,7 @@ public class MainMenuManager : MonoBehaviour
     {
         trackNameText.text = trackInfos[currentTrack].name;
         trackMaxRacersText.text = ("Max. " + trackInfos[currentTrack].maxRacers + " Racers");
+        trackImage.texture = trackInfos[currentTrack].image;
     }
     public void SwitchCurrentTrack(int amount)
     {
@@ -77,6 +89,14 @@ public class MainMenuManager : MonoBehaviour
         else if (currentTrack >= trackInfos.Count) { currentTrack = 0; }
 
         DisplayTrackInfo();
+    }
+    public void TrackPlayPressed()
+    {
+        raceData.lapCount = 2;
+        raceData.carCount = 2;
+        raceData.playerStartingPos = 2;
+
+        SceneManager.LoadScene(trackInfos[currentTrack].sceneName);
     }
 }
 
