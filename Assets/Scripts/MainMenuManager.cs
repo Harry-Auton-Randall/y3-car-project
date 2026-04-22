@@ -16,6 +16,14 @@ public class MainMenuManager : MonoBehaviour
 
     RaceData raceData;
 
+    //NEW
+    int lapInput = 0;
+    int carInput = 0;
+    int pspInput = 0;
+    bool lapValid, carValid, pspValid;
+    Button trackPlayButton;
+    TMP_InputField trackLapInput, trackCarInput, trackPSPInput;
+
     void Awake()
     {
         panels = new GameObject[]
@@ -31,10 +39,20 @@ public class MainMenuManager : MonoBehaviour
         trackImage = panels[1].transform.Find("TrackImage")
             .GetComponent<RawImage>();
 
+        //NEW
+        trackPlayButton = panels[1].transform.Find("PlayButton")
+            .GetComponent<Button>();
+        trackLapInput = panels[1].transform.Find("TrackLapInput")
+            .GetComponent<TMP_InputField>();
+        trackCarInput = panels[1].transform.Find("TrackRacersInput")
+            .GetComponent<TMP_InputField>();
+        trackPSPInput = panels[1].transform.Find("TrackPSPInput")
+            .GetComponent<TMP_InputField>();
+
         raceData = GameObject.Find("/RaceDataPasser").GetComponent<RaceData>();
 
         trackInfos.Add(new TrackInfo("Track 1", 4, 
-            Resources.Load("TrackImages/track1Image", typeof(Texture2D)) as Texture2D, "Track1")); //CHANGED
+            Resources.Load("TrackImages/track1Image", typeof(Texture2D)) as Texture2D, "Track1"));
         trackInfos.Add(new TrackInfo("Track 2", 8,
             Resources.Load("TrackImages/track2Image", typeof(Texture2D)) as Texture2D, null));
         trackInfos.Add(new TrackInfo("Track 3", 2,
@@ -44,6 +62,8 @@ public class MainMenuManager : MonoBehaviour
 
 
         DisplayTrackInfo();
+
+        TrackCheckValidInputs(); //NEW
 
         SwitchPanel();
     }
@@ -69,6 +89,7 @@ public class MainMenuManager : MonoBehaviour
     public void TitleQuitPressed()
     {
         Debug.Log("Quit pressed in Title");
+        Application.Quit();
     }
 
     public void TrackReturnPressed()
@@ -89,14 +110,69 @@ public class MainMenuManager : MonoBehaviour
         else if (currentTrack >= trackInfos.Count) { currentTrack = 0; }
 
         DisplayTrackInfo();
+
+        //NEW
+        //Re-checks CarInput, because it's outcome is dependent on the current track
+        //TrackCheckValidInputs called in CheckPSPInput which is called in CheckCarInput
+        TrackCheckCarInput(trackCarInput.text);
     }
     public void TrackPlayPressed()
     {
-        raceData.lapCount = 2;
-        raceData.carCount = 2;
-        raceData.playerStartingPos = 2;
+        //CHANGED
+        raceData.lapCount = lapInput;
+        raceData.carCount = carInput;
+        raceData.playerStartingPos = pspInput;
 
         SceneManager.LoadScene(trackInfos[currentTrack].sceneName);
+    }
+    //CHANGED
+    public void TrackCheckLapInput(string input)
+    {
+        //Check input from Lap field
+        if (int.TryParse(input, out lapInput) && lapInput >= 1)
+        {
+            lapValid = true;
+        }
+        else { lapValid = false; }
+        TrackCheckValidInputs();
+    }
+    //NEW
+    public void TrackCheckCarInput(string input)
+    {
+        //Check input from Racers field
+        if (int.TryParse(input, out carInput) && carInput >= 2
+            && carInput <= trackInfos[currentTrack].maxRacers)
+        {
+            carValid = true;
+        }
+        else { carValid = false; }
+
+        //Re-checks PSPinput, because it's outcome is dependent on carInput
+        //TrackCheckValidInputs called in that function, not also needed here
+        TrackCheckPSPInput(trackPSPInput.text);
+    }
+    //NEW
+    public void TrackCheckPSPInput(string input)
+    {
+        //Check input from PSP field
+        if (int.TryParse(input, out pspInput) && pspInput >= 1
+            && pspInput <= carInput)
+        {
+            pspValid = true;
+        }
+        else { pspValid = false; }
+
+        TrackCheckValidInputs();
+    }
+    //NEW
+    void TrackCheckValidInputs()
+    {
+        //Determines if all fields are valid
+        if (lapValid && carValid && pspValid)
+        {
+            trackPlayButton.interactable = true;
+        }
+        else { trackPlayButton.interactable = false; }
     }
 }
 
