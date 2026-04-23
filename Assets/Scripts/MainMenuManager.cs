@@ -16,7 +16,6 @@ public class MainMenuManager : MonoBehaviour
 
     RaceData raceData;
 
-    //NEW
     int lapInput = 0;
     int carInput = 0;
     int pspInput = 0;
@@ -24,12 +23,16 @@ public class MainMenuManager : MonoBehaviour
     Button trackPlayButton;
     TMP_InputField trackLapInput, trackCarInput, trackPSPInput;
 
+    //NEW
+    Slider settingsVolumeSlider;
+
     void Awake()
     {
         panels = new GameObject[]
         {
             GameObject.Find("MenuCanvas/TitlePanel"),
-            GameObject.Find("MenuCanvas/TrackSelectPanel")
+            GameObject.Find("MenuCanvas/TrackSelectPanel"),
+            GameObject.Find("MenuCanvas/SettingsPanel") //NEW
         };
 
         trackNameText = panels[1].transform.Find("TrackNameText")
@@ -39,7 +42,6 @@ public class MainMenuManager : MonoBehaviour
         trackImage = panels[1].transform.Find("TrackImage")
             .GetComponent<RawImage>();
 
-        //NEW
         trackPlayButton = panels[1].transform.Find("PlayButton")
             .GetComponent<Button>();
         trackLapInput = panels[1].transform.Find("TrackLapInput")
@@ -48,6 +50,10 @@ public class MainMenuManager : MonoBehaviour
             .GetComponent<TMP_InputField>();
         trackPSPInput = panels[1].transform.Find("TrackPSPInput")
             .GetComponent<TMP_InputField>();
+
+        //NEW
+        settingsVolumeSlider = panels[2].transform.Find("VolumeSlider")
+            .GetComponent<Slider>();
 
         raceData = GameObject.Find("/RaceDataPasser").GetComponent<RaceData>();
 
@@ -63,9 +69,15 @@ public class MainMenuManager : MonoBehaviour
 
         DisplayTrackInfo();
 
-        TrackCheckValidInputs(); //NEW
+        TrackCheckValidInputs();
 
         SwitchPanel();
+    }
+
+    //NEW
+    void Start()
+    {
+        GetComponent<SettingsPanelManager>().parentReturnFunc = this.ReturnPressed;
     }
 
     void SwitchPanel()
@@ -84,7 +96,14 @@ public class MainMenuManager : MonoBehaviour
     }
     public void TitleSettingsPressed()
     {
-        Debug.Log("Settings pressed in Title");
+        //NEW
+        Debug.Log(PlayerPrefs.GetFloat("volume"));
+        GetComponent<SettingsPanelManager>().volumeInput
+            = PlayerPrefs.GetFloat("volume");
+        settingsVolumeSlider.value = PlayerPrefs.GetFloat("volume");
+
+        currentPanel = 2;
+        SwitchPanel();
     }
     public void TitleQuitPressed()
     {
@@ -92,7 +111,7 @@ public class MainMenuManager : MonoBehaviour
         Application.Quit();
     }
 
-    public void TrackReturnPressed()
+    public void ReturnPressed() //RENAMED
     {
         currentPanel = 0;
         SwitchPanel();
@@ -111,21 +130,18 @@ public class MainMenuManager : MonoBehaviour
 
         DisplayTrackInfo();
 
-        //NEW
         //Re-checks CarInput, because it's outcome is dependent on the current track
         //TrackCheckValidInputs called in CheckPSPInput which is called in CheckCarInput
         TrackCheckCarInput(trackCarInput.text);
     }
     public void TrackPlayPressed()
     {
-        //CHANGED
         raceData.lapCount = lapInput;
         raceData.carCount = carInput;
         raceData.playerStartingPos = pspInput;
 
         SceneManager.LoadScene(trackInfos[currentTrack].sceneName);
     }
-    //CHANGED
     public void TrackCheckLapInput(string input)
     {
         //Check input from Lap field
@@ -136,7 +152,6 @@ public class MainMenuManager : MonoBehaviour
         else { lapValid = false; }
         TrackCheckValidInputs();
     }
-    //NEW
     public void TrackCheckCarInput(string input)
     {
         //Check input from Racers field
@@ -151,7 +166,6 @@ public class MainMenuManager : MonoBehaviour
         //TrackCheckValidInputs called in that function, not also needed here
         TrackCheckPSPInput(trackPSPInput.text);
     }
-    //NEW
     public void TrackCheckPSPInput(string input)
     {
         //Check input from PSP field
@@ -164,7 +178,6 @@ public class MainMenuManager : MonoBehaviour
 
         TrackCheckValidInputs();
     }
-    //NEW
     void TrackCheckValidInputs()
     {
         //Determines if all fields are valid
