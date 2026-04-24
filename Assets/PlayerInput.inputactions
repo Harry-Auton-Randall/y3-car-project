@@ -177,6 +177,34 @@
                     "isPartOfComposite": false
                 }
             ]
+        },
+        {
+            "name": "Menu",
+            "id": "b9922b9b-2951-4f81-b2af-1cf52876f614",
+            "actions": [
+                {
+                    "name": "PauseUnpause",
+                    "type": "Button",
+                    "id": "1d8a9487-1589-4de9-8558-fb74ab11c529",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "e5974b41-78b1-4263-9a96-72337965cf6d",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "PauseUnpause",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
         }
     ],
     "controlSchemes": []

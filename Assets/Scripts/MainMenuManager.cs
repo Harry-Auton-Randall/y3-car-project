@@ -23,7 +23,6 @@ public class MainMenuManager : MonoBehaviour
     Button trackPlayButton;
     TMP_InputField trackLapInput, trackCarInput, trackPSPInput;
 
-    //NEW
     Slider settingsVolumeSlider;
 
     void Awake()
@@ -32,7 +31,7 @@ public class MainMenuManager : MonoBehaviour
         {
             GameObject.Find("MenuCanvas/TitlePanel"),
             GameObject.Find("MenuCanvas/TrackSelectPanel"),
-            GameObject.Find("MenuCanvas/SettingsPanel") //NEW
+            GameObject.Find("MenuCanvas/SettingsPanel")
         };
 
         trackNameText = panels[1].transform.Find("TrackNameText")
@@ -51,7 +50,6 @@ public class MainMenuManager : MonoBehaviour
         trackPSPInput = panels[1].transform.Find("TrackPSPInput")
             .GetComponent<TMP_InputField>();
 
-        //NEW
         settingsVolumeSlider = panels[2].transform.Find("VolumeSlider")
             .GetComponent<Slider>();
 
@@ -74,7 +72,6 @@ public class MainMenuManager : MonoBehaviour
         SwitchPanel();
     }
 
-    //NEW
     void Start()
     {
         GetComponent<SettingsPanelManager>().parentReturnFunc = this.ReturnPressed;
@@ -96,7 +93,6 @@ public class MainMenuManager : MonoBehaviour
     }
     public void TitleSettingsPressed()
     {
-        //NEW
         Debug.Log(PlayerPrefs.GetFloat("volume"));
         GetComponent<SettingsPanelManager>().volumeInput
             = PlayerPrefs.GetFloat("volume");
@@ -111,7 +107,7 @@ public class MainMenuManager : MonoBehaviour
         Application.Quit();
     }
 
-    public void ReturnPressed() //RENAMED
+    public void ReturnPressed()
     {
         currentPanel = 0;
         SwitchPanel();

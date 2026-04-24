@@ -77,6 +77,8 @@ public class CarMovement : MonoBehaviour
     float[] wheelSpinSpeeds = new float[4]; //NEW
     float avgWheelSpinSpeed; //NEW
 
+    bool firstFrame = true;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -361,12 +363,27 @@ public class CarMovement : MonoBehaviour
 
             wheelBrakeModels[i].transform.rotation = wheelColliders[i].transform.rotation;
         }
-        wheelBrakeModels[0].transform.Rotate(0, -(steerIn * steerRange * steerRangeFraction) - 180, 0);
-        wheelBrakeModels[1].transform.Rotate(0, (steerIn * steerRange * steerRangeFraction) - 180, 0);
+
+        //NEW
+        if (firstFrame)
+        {
+            //Debug.Log(this.gameObject.GetInstanceID());
+            //Debug.Log(steerIn * steerRange * steerRangeFraction);
+            wheelBrakeModels[0].transform.Rotate(0, -180, 0);
+            wheelBrakeModels[1].transform.Rotate(0, -180, 0);
+        }
+        else
+        {
+            wheelBrakeModels[0].transform.Rotate(0, -(steerIn * steerRange * steerRangeFraction) - 180, 0);
+            wheelBrakeModels[1].transform.Rotate(0, (steerIn * steerRange * steerRangeFraction) - 180, 0);
+        }
+
         wheelBrakeModels[2].transform.Rotate(0, -180, 0);
         wheelBrakeModels[3].transform.Rotate(0, -180, 0);
 
+        firstFrame = false;
     }
+
     void Update()
     {
         lapPub = lap;

@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using UnityEngine.SceneManagement; //NEW
 
 public class LapManager : MonoBehaviour
 {
@@ -29,16 +30,20 @@ public class LapManager : MonoBehaviour
     AudioSource audioSource;
     public AudioClip ding, ding2;
 
-    RaceData raceData; //NEW
+    GameObject raceDataObj; //NEW
+    RaceData raceData;
 
     void Awake()
     {
-        //NEW
-        raceData = GameObject.Find("/RaceDataPasser").GetComponent<RaceData>();
-
-        totalLaps = raceData.lapCount;
-        cars = raceData.carCount;
-        playerStartingPosition = raceData.playerStartingPos;
+        //CHANGED
+        raceDataObj = GameObject.Find("/RaceDataPasser");
+        if (raceDataObj != null)
+        {
+            raceData = raceDataObj.GetComponent<RaceData>();
+            totalLaps = raceData.lapCount;
+            cars = raceData.carCount;
+            playerStartingPosition = raceData.playerStartingPos;
+        }
 
         audioSource = transform.Find("LapAudio").GetComponent<AudioSource>();
 
@@ -214,9 +219,18 @@ public class LapManager : MonoBehaviour
         audioSource.PlayOneShot(ding2);
     }
 
-    //NEW
     public void LapUpdateSound()
     {
         audioSource.PlayOneShot(ding, 0.5f);
+    }
+
+    //NEW
+    public void ReturnToMainMenu()
+    {
+        if (raceDataObj != null)
+        {
+            Destroy(raceDataObj);
+        }
+        SceneManager.LoadScene("MainMenu");
     }
 }
