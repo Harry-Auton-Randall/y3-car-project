@@ -9,7 +9,9 @@ public class MainMenuManager : MonoBehaviour
     GameObject[] panels;
     int currentPanel = 0;
 
-    List<TrackInfo> trackInfos = new List<TrackInfo>();
+    //List<TrackInfo> trackInfos = new List<TrackInfo>();
+    List<TrackInfo> trackInfos;
+
     int currentTrack = 0;
     TMPro.TextMeshProUGUI trackNameText, trackMaxRacersText;
     RawImage trackImage;
@@ -55,26 +57,28 @@ public class MainMenuManager : MonoBehaviour
 
         raceData = GameObject.Find("/RaceDataPasser").GetComponent<RaceData>();
 
-        trackInfos.Add(new TrackInfo("Track 1", 4, 
-            Resources.Load("TrackImages/track1Image", typeof(Texture2D)) as Texture2D, "Track1"));
-        trackInfos.Add(new TrackInfo("Track 2", 8,
-            Resources.Load("TrackImages/track2Image", typeof(Texture2D)) as Texture2D, null));
-        trackInfos.Add(new TrackInfo("Track 3", 2,
-            Resources.Load("TrackImages/track3Image", typeof(Texture2D)) as Texture2D, null));
-        trackInfos.Add(new TrackInfo("Track with Unusual Name", 99,
-            Resources.Load("TrackImages/trackUnusualImage", typeof(Texture2D)) as Texture2D, null));
-
-
-        DisplayTrackInfo();
-
-        TrackCheckValidInputs();
-
-        SwitchPanel();
+        //trackInfos.Add(new TrackInfo("Track 1", 4, 
+        //    Resources.Load("TrackImages/track1Image", typeof(Texture2D)) as Texture2D, "Track1"));
+        //trackInfos.Add(new TrackInfo("Track 2", 8,
+        //    Resources.Load("TrackImages/track2Image", typeof(Texture2D)) as Texture2D, null));
+        //trackInfos.Add(new TrackInfo("Track 3", 2,
+        //    Resources.Load("TrackImages/track3Image", typeof(Texture2D)) as Texture2D, null));
+        //trackInfos.Add(new TrackInfo("Track with Unusual Name", 99,
+        //    Resources.Load("TrackImages/trackUnusualImage", typeof(Texture2D)) as Texture2D, null));
     }
 
     void Start()
     {
         GetComponent<SettingsPanelManager>().parentReturnFunc = this.ReturnPressed;
+
+        //References ScoreManager's array directly, not a copy
+        trackInfos = GameObject.Find("/ScoreManagerObj").
+            GetComponent<ScoreManager>().trackInfos;
+
+        //IN START NOW
+        DisplayTrackInfo();
+        TrackCheckValidInputs();
+        SwitchPanel();
     }
 
     void SwitchPanel()
