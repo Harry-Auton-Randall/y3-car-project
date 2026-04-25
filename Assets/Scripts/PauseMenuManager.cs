@@ -18,7 +18,7 @@ public class PauseMenuManager : MonoBehaviour
 
     GameObject[] panels;
     int currentPanel = 0;
-    Slider settingsVolumeSlider;
+    //Slider settingsVolumeSlider;
 
     void Awake()
     {
@@ -35,8 +35,8 @@ public class PauseMenuManager : MonoBehaviour
             GameObject.Find("PauseMenuCanvas/MainPanel"),
             GameObject.Find("PauseMenuCanvas/SettingsPanel")
         };
-        settingsVolumeSlider = panels[1].transform.Find("VolumeSlider")
-            .GetComponent<Slider>();
+        //settingsVolumeSlider = panels[1].transform.Find("VolumeSlider")
+        //    .GetComponent<Slider>();
         SwitchPanel();
 
         Unpause();
@@ -104,10 +104,11 @@ public class PauseMenuManager : MonoBehaviour
 
     public void MainSettingsPressed()
     {
-        Debug.Log(PlayerPrefs.GetFloat("volume"));
-        GetComponent<SettingsPanelManager>().volumeInput
-            = PlayerPrefs.GetFloat("volume");
-        settingsVolumeSlider.value = PlayerPrefs.GetFloat("volume");
+        GetComponent<SettingsPanelManager>().SettingsOpened();
+        //Debug.Log(PlayerPrefs.GetFloat("volume"));
+        //GetComponent<SettingsPanelManager>().volumeInput
+        //    = PlayerPrefs.GetFloat("volume");
+        //settingsVolumeSlider.value = PlayerPrefs.GetFloat("volume");
 
         currentPanel = 1;
         SwitchPanel();
