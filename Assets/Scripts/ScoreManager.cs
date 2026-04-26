@@ -21,7 +21,7 @@ public class ScoreManager : MonoBehaviour
         trackInfos.Add(new TrackInfo("Track 1", 4,
             Resources.Load("TrackImages/track1Image", typeof(Texture2D)) as Texture2D, "Track1"));
         trackInfos.Add(new TrackInfo("Track 2", 8,
-            Resources.Load("TrackImages/track2Image", typeof(Texture2D)) as Texture2D, null));
+            Resources.Load("TrackImages/track2Image", typeof(Texture2D)) as Texture2D, "Track2"));
         trackInfos.Add(new TrackInfo("Track 3", 2,
             Resources.Load("TrackImages/track3Image", typeof(Texture2D)) as Texture2D, null));
         trackInfos.Add(new TrackInfo("Track with Unusual Name", 99,
