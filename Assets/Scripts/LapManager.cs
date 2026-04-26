@@ -3,7 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
-using UnityEngine.SceneManagement; //NEW
+using UnityEngine.SceneManagement;
 
 public class LapManager : MonoBehaviour
 {
@@ -30,12 +30,17 @@ public class LapManager : MonoBehaviour
     AudioSource audioSource;
     public AudioClip ding, ding2;
 
-    GameObject raceDataObj; //NEW
+    GameObject raceDataObj;
     RaceData raceData;
+
+    //NEW
+    GameObject scoreManagerObj;
+    string trackName;
+    bool newBestLap, newBestTotal;
+    TMPro.TextMeshProUGUI totalBestText, lapBestText;
 
     void Awake()
     {
-        //CHANGED
         raceDataObj = GameObject.Find("/RaceDataPasser");
         if (raceDataObj != null)
         {
@@ -43,6 +48,7 @@ public class LapManager : MonoBehaviour
             totalLaps = raceData.lapCount;
             cars = raceData.carCount;
             playerStartingPosition = raceData.playerStartingPos;
+            this.trackName = raceData.trackName; //NEW
         }
 
         audioSource = transform.Find("LapAudio").GetComponent<AudioSource>();
@@ -55,6 +61,13 @@ public class LapManager : MonoBehaviour
             .GetComponent<TMPro.TextMeshProUGUI>();
         resultBestTimeText = transform.Find("LapManagerCanvas/ResultBestTimeText")
             .GetComponent<TMPro.TextMeshProUGUI>();
+        //NEW
+        totalBestText = transform.Find("LapManagerCanvas/TotalTimeBestText")
+            .GetComponent<TMPro.TextMeshProUGUI>();
+        lapBestText = transform.Find("LapManagerCanvas/LapTimeBestText")
+            .GetComponent<TMPro.TextMeshProUGUI>();
+        totalBestText.enabled = false;
+        lapBestText.enabled = false;
 
         resultPositionText.enabled = false;
         resultTotalTimeText.enabled = false;
@@ -188,6 +201,25 @@ public class LapManager : MonoBehaviour
 
     public void DisplayPlayerResults(int idIn)
     {
+        //NEW
+        scoreManagerObj = GameObject.Find("/ScoreManagerObj");
+        if (scoreManagerObj != null)
+        {
+            scoreManagerObj.GetComponent<ScoreManager>().SaveBestTimes
+                (out newBestLap, out newBestTotal, totalLaps,
+                 bestLapTimes[idIn], totalLapTimes[idIn], trackName);
+
+            if (newBestTotal)
+            {
+                totalBestText.enabled = true;
+            }
+            if (newBestLap)
+            {
+                lapBestText.enabled = true;
+            }
+        }
+
+
         resultPositionText.enabled = true;
         resultTotalTimeText.enabled = true;
         resultBestTimeText.enabled = true;
@@ -224,7 +256,6 @@ public class LapManager : MonoBehaviour
         audioSource.PlayOneShot(ding, 0.5f);
     }
 
-    //NEW
     public void ReturnToMainMenu()
     {
         if (raceDataObj != null)

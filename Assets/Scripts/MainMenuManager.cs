@@ -25,10 +25,21 @@ public class MainMenuManager : MonoBehaviour
     Button trackPlayButton;
     TMP_InputField trackLapInput, trackCarInput, trackPSPInput;
 
+    public GameObject scoreManagerObj; //assign in inspector
+
+    //NEW
+    ScoreManager scoreManager;
+
     //Slider settingsVolumeSlider;
 
     void Awake()
     {
+        //NEW
+        if (GameObject.Find("/ScoreManagerObj(Clone)") == null)
+        {
+            Instantiate(scoreManagerObj);
+        }
+
         panels = new GameObject[]
         {
             GameObject.Find("MenuCanvas/TitlePanel"),
@@ -71,9 +82,11 @@ public class MainMenuManager : MonoBehaviour
     {
         GetComponent<SettingsPanelManager>().parentReturnFunc = this.ReturnPressed;
 
+        //CHANGED
+        scoreManager = GameObject.Find("/ScoreManagerObj(Clone)").
+            GetComponent<ScoreManager>();
         //References ScoreManager's array directly, not a copy
-        trackInfos = GameObject.Find("/ScoreManagerObj").
-            GetComponent<ScoreManager>().trackInfos;
+        trackInfos = scoreManager.trackInfos;
 
         //IN START NOW
         DisplayTrackInfo();
@@ -141,6 +154,7 @@ public class MainMenuManager : MonoBehaviour
         raceData.lapCount = lapInput;
         raceData.carCount = carInput;
         raceData.playerStartingPos = pspInput;
+        raceData.trackName = trackInfos[currentTrack].name;
 
         SceneManager.LoadScene(trackInfos[currentTrack].sceneName);
     }
