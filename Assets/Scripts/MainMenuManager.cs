@@ -29,12 +29,15 @@ public class MainMenuManager : MonoBehaviour
 
     //NEW
     ScoreManager scoreManager;
+    TMPro.TextMeshProUGUI trackBestTimeText, trackBestLapText;
+
+    float bestLapOut, bestTimeOut;
+    int lapCountOut;
 
     //Slider settingsVolumeSlider;
 
     void Awake()
     {
-        //NEW
         if (GameObject.Find("/ScoreManagerObj(Clone)") == null)
         {
             Instantiate(scoreManagerObj);
@@ -62,6 +65,12 @@ public class MainMenuManager : MonoBehaviour
             .GetComponent<TMP_InputField>();
         trackPSPInput = panels[1].transform.Find("TrackPSPInput")
             .GetComponent<TMP_InputField>();
+
+        //NEW
+        trackBestTimeText = panels[1].transform.Find("TrackBestTimeText")
+            .GetComponent<TMPro.TextMeshProUGUI>();
+        trackBestLapText = panels[1].transform.Find("TrackBestLapText")
+            .GetComponent<TMPro.TextMeshProUGUI>();
 
         //settingsVolumeSlider = panels[2].transform.Find("VolumeSlider")
         //    .GetComponent<Slider>();
@@ -110,7 +119,6 @@ public class MainMenuManager : MonoBehaviour
     }
     public void TitleSettingsPressed()
     {
-        //CHANGED
         GetComponent<SettingsPanelManager>().SettingsOpened();
         //Debug.Log(PlayerPrefs.GetFloat("volume"));
         //GetComponent<SettingsPanelManager>().volumeInput
@@ -136,6 +144,7 @@ public class MainMenuManager : MonoBehaviour
         trackNameText.text = trackInfos[currentTrack].name;
         trackMaxRacersText.text = ("Max. " + trackInfos[currentTrack].maxRacers + " Racers");
         trackImage.texture = trackInfos[currentTrack].image;
+        SetBestTimeText();//NEW
     }
     public void SwitchCurrentTrack(int amount)
     {
@@ -166,6 +175,9 @@ public class MainMenuManager : MonoBehaviour
             lapValid = true;
         }
         else { lapValid = false; }
+
+        SetBestTimeText();//NEW
+
         TrackCheckValidInputs();
     }
     public void TrackCheckCarInput(string input)
@@ -202,6 +214,37 @@ public class MainMenuManager : MonoBehaviour
             trackPlayButton.interactable = true;
         }
         else { trackPlayButton.interactable = false; }
+    }
+
+    //NEW
+    void SetBestTimeText()
+    {
+        if (lapValid)
+        {
+            lapCountOut = lapInput;
+            scoreManager.FindTimesWithCount(out bestLapOut, out bestTimeOut, 
+                                            lapCountOut, trackInfos[currentTrack].name);
+        }
+        else
+        {
+            scoreManager.FindTimesWithoutCount(out bestLapOut, out bestTimeOut,
+                                               out lapCountOut, trackInfos[currentTrack].name);
+        }
+
+
+
+        trackBestLapText.text = ("Best lap - " + PlayerHudManager.FormatTime(bestLapOut));
+
+        if (lapCountOut == 1)
+        {
+            trackBestTimeText.text = ("Best time - " + 
+                PlayerHudManager.FormatTime(bestTimeOut) + " - 1 lap");
+        }
+        else
+        {
+            trackBestTimeText.text = ("Best time - " + 
+                PlayerHudManager.FormatTime(bestTimeOut) + " - " + lapCountOut + " laps");
+        }
     }
 }
 

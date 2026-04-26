@@ -210,7 +210,7 @@ public class ScoreManager : MonoBehaviour
         totalTimeOut = 0;
         for (int i = 0; i < trackIn.timeInfo.Count; i++)
         {
-            if (trackIn.timeInfo[i].lapCount < lapCountOut || lapCountOut == 0)
+            if (trackIn.timeInfo[i].time < totalTimeOut || totalTimeOut == 0)
             {
                 lapCountOut = trackIn.timeInfo[i].lapCount;
                 totalTimeOut = trackIn.timeInfo[i].time;

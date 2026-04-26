@@ -202,7 +202,7 @@ public class LapManager : MonoBehaviour
     public void DisplayPlayerResults(int idIn)
     {
         //NEW
-        scoreManagerObj = GameObject.Find("/ScoreManagerObj");
+        scoreManagerObj = GameObject.Find("/ScoreManagerObj(Clone)"); //CHANGED
         if (scoreManagerObj != null)
         {
             scoreManagerObj.GetComponent<ScoreManager>().SaveBestTimes
