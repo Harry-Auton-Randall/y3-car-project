@@ -36,7 +36,7 @@ public class CarControlAI : MonoBehaviour
 
     float turningDistTotal;
 
-    public int waypointsAhead = 2;
+    public int waypointsAhead = 4;
 
     bool reversing = false;
 

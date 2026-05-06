@@ -13,10 +13,10 @@ public class CarMovement : MonoBehaviour
     public float maxSpeed = 90.0f;
     public float maxSpeedReverse = 15.0f;
 
-    public Collider currentWaypoint;
-    public Collider[] nextWaypoints;
-    public Vector3 resetPosition = new Vector3(0, 3, 0);
-    public Quaternion resetRotation = Quaternion.identity;
+    Collider currentWaypoint;
+    Collider[] nextWaypoints;
+    Vector3 resetPosition = new Vector3(0, 3, 0);
+    Quaternion resetRotation = Quaternion.identity;
     int waypointLayer;
 
     //public Collider startWaypoint; - NO LONGER NEEDED
