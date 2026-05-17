@@ -321,9 +321,21 @@ public class CarControlAI : MonoBehaviour
 
         //change car inputs depending on waypointAngle
         //Steering
-        maxSteering = carMovement.steerRange * carMovement.steerRangeFraction;
 
-        if (waypointAngle > maxSteering)
+        maxSteering = carMovement.steerRange * carMovement.steerRangeFraction;
+        //Attempt to follow a more natural curve towards target waypoint
+        if (carTurningAngle <= 10 && !reversing && 
+            (Mathf.Abs(targetWaypoints[0].transform.eulerAngles.y - this.transform.eulerAngles.y) > 3))
+        {
+            steerIn = ((Mathf.Atan(2.4f / carTurningRadius)) * Mathf.Rad2Deg) / maxSteering;
+            steerIn = Mathf.Clamp(steerIn, -1f, 1f);
+            if (waypointAngle < 0)
+            {
+                steerIn *= -1;
+            }
+        }
+        //Aim directly at target waypoint
+        else if (waypointAngle > maxSteering)
         {
             steerIn = 1;
         }
