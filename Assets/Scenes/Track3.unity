@@ -2582,12 +2582,16 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5163552613853637638, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
+      propertyPath: aimStraight
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5163552613853637638, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
       propertyPath: offsetLimitLeft
-      value: 4
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 5163552613853637638, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
       propertyPath: offsetLimitRight
-      value: 4
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 5163552613853637638, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
       propertyPath: nextWaypoints.Array.size
@@ -2599,7 +2603,7 @@ PrefabInstance:
       objectReference: {fileID: 883538202}
     - target: {fileID: 6615020253962009167, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: -3
       objectReference: {fileID: 0}
     - target: {fileID: 6615020253962009167, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
       propertyPath: m_LocalPosition.y
@@ -2643,7 +2647,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6961845938863922947, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
       propertyPath: m_Center.x
-      value: 0
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 9215383891390282685, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
       propertyPath: m_Name
@@ -3663,12 +3667,16 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5163552613853637638, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
-      propertyPath: offsetLimitLeft
+      propertyPath: aimStraight
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5163552613853637638, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
+      propertyPath: offsetLimitLeft
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5163552613853637638, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
       propertyPath: offsetLimitRight
-      value: 1
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 5163552613853637638, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
       propertyPath: nextWaypoints.Array.size
@@ -3680,7 +3688,7 @@ PrefabInstance:
       objectReference: {fileID: 1000326989}
     - target: {fileID: 6615020253962009167, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1
+      value: -3
       objectReference: {fileID: 0}
     - target: {fileID: 6615020253962009167, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
       propertyPath: m_LocalPosition.y
@@ -3724,7 +3732,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6961845938863922947, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
       propertyPath: m_Center.x
-      value: -1
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 9215383891390282685, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
       propertyPath: m_Name
@@ -4452,6 +4460,10 @@ PrefabInstance:
     - target: {fileID: 4476914794173281499, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5163552613853637638, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
+      propertyPath: aimStraight
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5163552613853637638, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
       propertyPath: offsetLimitLeft
@@ -5196,7 +5208,7 @@ MonoBehaviour:
   - {fileID: 363713208}
   - {fileID: 421084406}
   cars: 2
-  playerStartingPosition: 2
+  playerStartingPosition: 1
   playerCar: {fileID: 8698493926277310524, guid: 9b47d67e8dfb3f140989bb9b404d5eaf, type: 3}
   aiCar: {fileID: 8915396727444864800, guid: 94a94231704c8d84c91d59fa6b3bf1e4, type: 3}
   totalLaps: 3
@@ -8199,12 +8211,16 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5163552613853637638, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
+      propertyPath: aimStraight
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5163552613853637638, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
       propertyPath: offsetLimitLeft
-      value: 2.5
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: 5163552613853637638, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
       propertyPath: offsetLimitRight
-      value: 1
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: 5163552613853637638, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
       propertyPath: nextWaypoints.Array.size

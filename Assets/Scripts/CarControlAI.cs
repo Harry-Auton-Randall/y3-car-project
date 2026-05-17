@@ -21,7 +21,8 @@ public class CarControlAI : MonoBehaviour
 
     Transform targetWaypointRandomPos;
     float targetWaypointOffset;
-    public float waypointOffsetMult = 1f; //NEW
+    public float waypointOffsetMult = 1f;
+    bool waypointAimStraight;
 
     Vector3[] waypointTurningEnds;
     float[] waypointTurningRadii;
@@ -114,7 +115,9 @@ public class CarControlAI : MonoBehaviour
 
         targetWaypointOffset = Random.Range(
             -(targetWaypoints[0].GetComponent<Waypoint>().offsetLimitLeft),
-            targetWaypoints[0].GetComponent<Waypoint>().offsetLimitRight); //NEW
+            targetWaypoints[0].GetComponent<Waypoint>().offsetLimitRight);
+
+        waypointAimStraight = targetWaypoints[0].GetComponent<Waypoint>().aimStraight;
     }
 
     void RecalcWaypoints(Collider[] nextWaypointsIn2)
@@ -324,7 +327,7 @@ public class CarControlAI : MonoBehaviour
 
         maxSteering = carMovement.steerRange * carMovement.steerRangeFraction;
         //Attempt to follow a more natural curve towards target waypoint
-        if (carTurningAngle <= 10 && !reversing && 
+        if (carTurningAngle <= 10 && !reversing && !waypointAimStraight &&
             (Mathf.Abs(targetWaypoints[0].transform.eulerAngles.y - this.transform.eulerAngles.y) > 3))
         {
             steerIn = ((Mathf.Atan(2.4f / carTurningRadius)) * Mathf.Rad2Deg) / maxSteering;
