@@ -116,6 +116,17 @@ public class LapManager : MonoBehaviour
             
             carMovements[i] = instance.GetComponent<CarMovement>();
             carMovements[i].SetStartPosition(startWaypoints[i], i, totalLaps);
+            //sets waypointOffsetMult based on number of cars
+            if (!carMovements[i].isPlayer)
+            {
+                if (cars == 2) {
+                    carMovements[i].GetComponent<CarControlAI>().waypointOffsetMult = 0;
+                } else if (cars == 3) {
+                    carMovements[i].GetComponent<CarControlAI>().waypointOffsetMult = 0.5f;
+                } else {
+                    carMovements[i].GetComponent<CarControlAI>().waypointOffsetMult = 1;
+                }
+            }
             carPositions[i] = i;
             stillRacing.Add(i);
         }

@@ -18,14 +18,12 @@ public class ScoreManager : MonoBehaviour
         DontDestroyOnLoad(this.gameObject);
 
         //Moved from MainMenuManager
-        trackInfos.Add(new TrackInfo("Track 1", 4,
+        trackInfos.Add(new TrackInfo("Basic Track 1", 4,
             Resources.Load("TrackImages/track1Image", typeof(Texture2D)) as Texture2D, "Track1"));
-        trackInfos.Add(new TrackInfo("Track 2", 8,
+        trackInfos.Add(new TrackInfo("Basic Track 2", 8,
             Resources.Load("TrackImages/track2Image", typeof(Texture2D)) as Texture2D, "Track2"));
-        trackInfos.Add(new TrackInfo("Track 3", 2,
-            Resources.Load("TrackImages/track3Image", typeof(Texture2D)) as Texture2D, null));
-        trackInfos.Add(new TrackInfo("Track with Unusual Name", 99,
-            Resources.Load("TrackImages/trackUnusualImage", typeof(Texture2D)) as Texture2D, null));
+        trackInfos.Add(new TrackInfo("Ampersand Circuit", 12,
+            Resources.Load("TrackImages/track3Image", typeof(Texture2D)) as Texture2D, "Track3"));
 
         filePath = Path.Combine(Application.persistentDataPath, fileName);
         Debug.Log(filePath);
