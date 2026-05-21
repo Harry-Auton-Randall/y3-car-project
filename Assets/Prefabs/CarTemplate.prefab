@@ -597,6 +597,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8dffae8dbcd77684794d757c76e78bff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CarMovement
+  gradualSteering: 0
+  steerSpeedMax: 6
+  steerSpeedMin: 2
+  newSteerFalloff: 1
   torqueMotor: 1000
   torqueBrake: 1000
   steerRange: 30

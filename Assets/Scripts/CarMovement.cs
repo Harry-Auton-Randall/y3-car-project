@@ -2,6 +2,19 @@ using UnityEngine;
 
 public class CarMovement : MonoBehaviour
 {
+    //NEW HANDLING STUFF
+
+    //Gradual steering
+    public bool gradualSteering = true;
+    public float steerSpeedMax = 6;
+    public float steerSpeedMin = 1.5f;
+    float steerSpeed;
+    float steerGrad;
+
+    //Different steerRangeFraction falloff
+    public bool newSteerFalloff = true;
+
+
     //Car stats
     public float torqueMotor = 1000.0f;
     public float torqueBrake = 1000.0f;
@@ -81,6 +94,12 @@ public class CarMovement : MonoBehaviour
 
     void Awake()
     {
+        if (newSteerFalloff)
+        {
+            steerRangeMin = 0.05f;
+        }
+
+
         rb = GetComponent<Rigidbody>();
 
         audioSource = transform.Find("EngineAudio").GetComponent<AudioSource>();
@@ -324,12 +343,38 @@ public class CarMovement : MonoBehaviour
         }
         currentSpeedFraction = 1 - Mathf.Pow(Mathf.Clamp(currentSpeedFraction, 0f, 1f), 1.5f);
 
-        //Finds steerRangeFraction
-        steerRangeFraction = 1 - Mathf.Lerp(0, (1 - steerRangeMin), (currentSpeed / maxSpeed));
+        //Finds steerRangeFraction - old version
+        if (!newSteerFalloff)
+        {
+            steerRangeFraction = 1 - Mathf.Lerp(0, (1 - steerRangeMin), (currentSpeed / maxSpeed));
+        }
+        //new version - -(x-1)^3, x = currentSpeed / maxSpeed
+        else
+        {
+            steerRangeFraction = -1 * Mathf.Pow(Mathf.Clamp(currentSpeed / maxSpeed, 0f, 1f) - 1, 3);
+            steerRangeFraction = steerRangeMin + (steerRangeFraction * (1 - steerRangeMin));
+            //Debug.Log(steerRangeFraction);
+        }
 
-        //Steers front wheels
-        wheelColliders[0].steerAngle = steerIn * steerRange * steerRangeFraction;
-        wheelColliders[1].steerAngle = steerIn * steerRange * steerRangeFraction;
+        //steerSpeed scales linearly with currentSpeed - max at <=0, min at maxSpeed
+        if (gradualSteering)
+        {
+            steerSpeed = Mathf.Lerp(steerSpeedMin, steerSpeedMax, 1 - Mathf.Clamp(currentSpeed / maxSpeed, 0f, 1f));
+        }
+
+        //Steers front wheels - old version
+        if (!gradualSteering)
+        {
+            wheelColliders[0].steerAngle = steerIn * steerRange * steerRangeFraction;
+            wheelColliders[1].steerAngle = steerIn * steerRange * steerRangeFraction;
+        }
+        //New version - gradually moves steer angle to target instead of instant snapping
+        else
+        {
+            steerGrad = Mathf.MoveTowards(steerGrad, steerIn, steerSpeed * Time.fixedDeltaTime);
+            wheelColliders[0].steerAngle = steerGrad * steerRange * steerRangeFraction;
+            wheelColliders[1].steerAngle = steerGrad * steerRange * steerRangeFraction;
+        }
 
         //checks if desired direction is opposite to current direction, and that neither current speed or motorIn are 0
         //If true, cause braking instead of accelerating
@@ -374,8 +419,16 @@ public class CarMovement : MonoBehaviour
         }
         else
         {
-            wheelBrakeModels[0].transform.Rotate(0, -(steerIn * steerRange * steerRangeFraction) - 180, 0);
-            wheelBrakeModels[1].transform.Rotate(0, (steerIn * steerRange * steerRangeFraction) - 180, 0);
+            if (!gradualSteering)
+            {
+                wheelBrakeModels[0].transform.Rotate(0, -(steerIn * steerRange * steerRangeFraction) - 180, 0);
+                wheelBrakeModels[1].transform.Rotate(0, (steerIn * steerRange * steerRangeFraction) - 180, 0);
+            }
+            else
+            {
+                wheelBrakeModels[0].transform.Rotate(0, -(steerGrad * steerRange * steerRangeFraction) - 180, 0);
+                wheelBrakeModels[1].transform.Rotate(0, (steerGrad * steerRange * steerRangeFraction) - 180, 0);
+            }
         }
 
         wheelBrakeModels[2].transform.Rotate(0, -180, 0);
