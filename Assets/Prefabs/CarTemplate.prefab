@@ -598,9 +598,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CarMovement
   gradualSteering: 0
-  steerSpeedMax: 6
+  steerSpeedMax: 10
   steerSpeedMin: 2
-  newSteerFalloff: 1
+  newSteerFalloff: 0
   torqueMotor: 1000
   torqueBrake: 1000
   steerRange: 30

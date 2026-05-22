@@ -348,10 +348,10 @@ public class CarMovement : MonoBehaviour
         {
             steerRangeFraction = 1 - Mathf.Lerp(0, (1 - steerRangeMin), (currentSpeed / maxSpeed));
         }
-        //new version - -(x-1)^3, x = currentSpeed / maxSpeed
+        //new version - ((-x)+1)^n, x = currentSpeed / maxSpeed
         else
         {
-            steerRangeFraction = -1 * Mathf.Pow(Mathf.Clamp(currentSpeed / maxSpeed, 0f, 1f) - 1, 3);
+            steerRangeFraction = Mathf.Pow((-1 * Mathf.Clamp(currentSpeed / maxSpeed, 0f, 1f)) + 1, 2f);
             steerRangeFraction = steerRangeMin + (steerRangeFraction * (1 - steerRangeMin));
             //Debug.Log(steerRangeFraction);
         }
