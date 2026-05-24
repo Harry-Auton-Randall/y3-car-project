@@ -14,6 +14,9 @@ public class CarMovement : MonoBehaviour
     //Different steerRangeFraction falloff
     public bool newSteerFalloff = true;
 
+    //New braking
+    public bool newBraking = true;
+
 
     //Car stats
     public float torqueMotor = 1000.0f;
@@ -97,6 +100,11 @@ public class CarMovement : MonoBehaviour
         if (newSteerFalloff)
         {
             steerRangeMin = 0.05f;
+        }
+
+        if (newBraking)
+        {
+            torqueBrake = 1500f;
         }
 
 

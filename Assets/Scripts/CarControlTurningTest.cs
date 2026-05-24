@@ -3,6 +3,9 @@ using UnityEngine;
 
 public class CarControlTurningTest : MonoBehaviour
 {
+    public enum testType { turningRadius, braking };
+    public testType test;
+
     CarMovement carMovement;
     //CameraMovement cameraMovement;
 
@@ -12,7 +15,7 @@ public class CarControlTurningTest : MonoBehaviour
     //InputAction camRotAction;
     //Vector2 camAngle;
 
-    //TEMPORARY
+    //TURNING RADIUS
     public float targetSpeed = 10f;
     public float targetAngle = 90f;
     public float targetAngleLocal;
@@ -29,8 +32,15 @@ public class CarControlTurningTest : MonoBehaviour
     Quaternion startingRot;
     public Collider startWaypoint;
 
+    //BRAKING
+    //targetSpeed from turning radius
+    //mode from turning radius
+    public float brakingTime;
+    public float brakingSpeed;
+
     void Awake()
     {
+        brakingTime = 0;
         carMovement = GetComponent<CarMovement>();
 
         startingPos = transform.position;
@@ -71,70 +81,116 @@ public class CarControlTurningTest : MonoBehaviour
 
     void Update()
     {
-        //carMovement.SetMotorIn(motorAction.ReadValue<float>());
-        //carMovement.SetSteerIn(steerAction.ReadValue<float>());
-
-        //start of turn
-        if (carMovement.currentSpeed >= targetSpeed)
+        if (test == testType.turningRadius)
         {
-            if (mode == 0)
-            {
-                mode = 1;
-                targetAngle = 180f;
-                startPos = transform.position;
-            }
-        }
 
-        //end of turn
-        if (mode == 1)
-        {
-            endPos = transform.position;
-            if (Mathf.Abs(endPos.z - startPos.z) >= Mathf.Abs(endPos.x - startPos.x))
+
+            //carMovement.SetMotorIn(motorAction.ReadValue<float>());
+            //carMovement.SetSteerIn(steerAction.ReadValue<float>());
+
+            //start of turn
+            if (carMovement.currentSpeed >= targetSpeed)
             {
-                if (transform.rotation.eulerAngles.y >= 175f)
+                if (mode == 0)
                 {
-                    mode = 2;
-                    resultRadius = Mathf.Abs(endPos.z - startPos.z);
+                    mode = 1;
+                    targetAngle = 180f;
+                    startPos = transform.position;
                 }
             }
+
+            //end of turn
+            if (mode == 1)
+            {
+                endPos = transform.position;
+                if (Mathf.Abs(endPos.z - startPos.z) >= Mathf.Abs(endPos.x - startPos.x))
+                {
+                    if (transform.rotation.eulerAngles.y >= 175f)
+                    {
+                        mode = 2;
+                        resultRadius = Mathf.Abs(endPos.z - startPos.z);
+                    }
+                }
+            }
+
+            //steering
+            maxSteering = carMovement.steerRange * carMovement.steerRangeFraction;
+            targetAngleLocal = targetAngle - transform.rotation.eulerAngles.y;
+            if (targetAngleLocal > maxSteering)
+            {
+                steerIn = 1;
+            }
+            else if (targetAngleLocal < maxSteering * -1)
+            {
+                steerIn = -1;
+            }
+            else
+            {
+                steerIn = targetAngleLocal / maxSteering;
+            }
+
+            //motor
+            if (carMovement.currentSpeed <= targetSpeed)
+            {
+                motorIn = 1;
+            }
+            else
+            {
+                motorIn = -1;
+            }
+
+            //functions
+            carMovement.SetMotorIn(motorIn);
+            carMovement.SetSteerIn(steerIn);
+
+
+            //camAngle = camRotAction.ReadValue<Vector2>();
+            //if (camAngle.x == 0f && camAngle.y == 0f)
+            //{
+            //    camAngle.y = 1;
+            //}
+            //cameraMovement.SetCamRotIn(Mathf.Atan2(camAngle.x, camAngle.y) * Mathf.Rad2Deg);
         }
 
-        //steering
-        maxSteering = carMovement.steerRange * carMovement.steerRangeFraction;
-        targetAngleLocal = targetAngle - transform.rotation.eulerAngles.y;
-        if (targetAngleLocal > maxSteering)
+        else if (test == testType.braking)
         {
-            steerIn = 1;
-        }
-        else if (targetAngleLocal < maxSteering * -1)
-        {
-            steerIn = -1;
-        }
-        else
-        {
-            steerIn = targetAngleLocal / maxSteering;
-        }
 
-        //motor
-        if (carMovement.currentSpeed <= targetSpeed)
-        {
-            motorIn = 1;
-        }
-        else
-        {
-            motorIn = -1;
-        }
-
-        //functions
-        carMovement.SetMotorIn(motorIn);
-        carMovement.SetSteerIn(steerIn);
+            if (mode == 0)
+            {
+                if (carMovement.currentSpeed >= 80)
+                {
+                    mode = 1;
+                }
+            }
+            else if (mode == 1)
+            {
+                brakingTime += Time.deltaTime;
+                if (carMovement.currentSpeed <= targetSpeed)
+                {
+                    brakingSpeed = (80f - targetSpeed) / brakingTime;
+                    mode = 2;
+                }
+            }
 
 
-        //camAngle = camRotAction.ReadValue<Vector2>();
-        //if (camAngle.x == 0f && camAngle.y == 0f)
-        //{
-        //    camAngle.y = 1;
-        //}
-        //cameraMovement.SetCamRotIn(Mathf.Atan2(camAngle.x, camAngle.y) * Mathf.Rad2Deg);
+
+            if (mode == 0)
+            {
+                motorIn = 1;
+            }
+            else if (mode == 1)
+            {
+                motorIn = -1;
+            }
+            else
+            {
+                motorIn = 0;
+            }
+            steerIn = 0;
+
+            //functions
+            carMovement.SetMotorIn(motorIn);
+            carMovement.SetSteerIn(steerIn);
+        }
     }
 }

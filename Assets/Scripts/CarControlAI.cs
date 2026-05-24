@@ -36,6 +36,7 @@ public class CarControlAI : MonoBehaviour
     float carTurningDist;
 
     float turningDistTotal;
+    public float brakingSpeed;
 
     public int waypointsAhead = 4;
 
@@ -56,6 +57,17 @@ public class CarControlAI : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         waypointMask = (1 << LayerMask.NameToLayer("Waypoint"));
         targetWaypointRandomPos = new GameObject("AiCarTargetWaypointPos").transform; //NEW
+    }
+    void Start()
+    {
+        if (carMovement.newBraking)
+        {
+            brakingSpeed = 11;
+        }
+        else
+        {
+            brakingSpeed = 8;
+        }
     }
 
     public void UpdateWaypoint(Collider currentWaypointIn, Collider[] nextWaypointsIn)
@@ -383,7 +395,7 @@ public class CarControlAI : MonoBehaviour
             //Checks against each waypoint's turningSpeed, changes targetSpeed if going too fast
             turningDistTotal = carTurningDist;
             if (Mathf.Pow(waypointTurningSpeeds[0], 2) <
-                Mathf.Pow(carMovement.currentSpeed, 2) - (16 * turningDistTotal))
+                Mathf.Pow(carMovement.currentSpeed, 2) - (2 * brakingSpeed * turningDistTotal))
             {
                 if (waypointTurningSpeeds[0] < targetSpeed)
                 {

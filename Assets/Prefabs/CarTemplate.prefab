@@ -601,6 +601,7 @@ MonoBehaviour:
   steerSpeedMax: 10
   steerSpeedMin: 2
   newSteerFalloff: 0
+  newBraking: 1
   torqueMotor: 1000
   torqueBrake: 1000
   steerRange: 30
