@@ -17,6 +17,9 @@ public class CarMovement : MonoBehaviour
     //New braking
     public bool newBraking = true;
 
+    //New suspension
+    public bool newSuspension = true;
+
 
     //Car stats
     public float torqueMotor = 1000.0f;
@@ -111,13 +114,25 @@ public class CarMovement : MonoBehaviour
         rb = GetComponent<Rigidbody>();
 
         audioSource = transform.Find("EngineAudio").GetComponent<AudioSource>();
-        lapManager = GameObject.Find("/LapManager").GetComponent<LapManager>(); //NEW
+        lapManager = GameObject.Find("/LapManager").GetComponent<LapManager>();
 
         wheelColliders = new WheelCollider[4];
         wheelColliders[0] = transform.Find("WheelFrontLeftCollider").GetComponent<WheelCollider>();
         wheelColliders[1] = transform.Find("WheelFrontRightCollider").GetComponent<WheelCollider>();
         wheelColliders[2] = transform.Find("WheelBackLeftCollider").GetComponent<WheelCollider>();
         wheelColliders[3] = transform.Find("WheelBackRightCollider").GetComponent<WheelCollider>();
+
+        if (newSuspension)
+        {
+            JointSpring tempSpring;
+            for (int i=0;i<wheelColliders.Length;i++)
+            {
+                tempSpring = wheelColliders[i].suspensionSpring;
+                tempSpring.spring *= 2;
+                tempSpring.damper *= 2;
+                wheelColliders[i].suspensionSpring = tempSpring;
+            }
+        }
 
         wheelModels = new Transform[4];
         wheelModels[0] = transform.Find("WheelFrontLeft");
