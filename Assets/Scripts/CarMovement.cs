@@ -19,7 +19,7 @@ public class CarMovement : MonoBehaviour
 
     //New suspension
     public bool newSuspension = true;
-
+    public float newSuspensionMult = 2;
 
     //Car stats
     public float torqueMotor = 1000.0f;
@@ -128,8 +128,8 @@ public class CarMovement : MonoBehaviour
             for (int i=0;i<wheelColliders.Length;i++)
             {
                 tempSpring = wheelColliders[i].suspensionSpring;
-                tempSpring.spring *= 2;
-                tempSpring.damper *= 2;
+                tempSpring.spring *= newSuspensionMult;
+                tempSpring.damper *= newSuspensionMult;
                 wheelColliders[i].suspensionSpring = tempSpring;
             }
         }
