@@ -408,7 +408,7 @@ public class CarControlAI : MonoBehaviour
                 {
                     turningDistTotal += waypointTurningDists[i];
                     if (Mathf.Pow(waypointTurningSpeeds[i + 1], 2) <
-                        Mathf.Pow(carMovement.currentSpeed, 2) - (16 * turningDistTotal))
+                        Mathf.Pow(carMovement.currentSpeed, 2) - (2 * brakingSpeed * turningDistTotal))
                     {
                         if (waypointTurningSpeeds[i + 1] < targetSpeed)
                         {
