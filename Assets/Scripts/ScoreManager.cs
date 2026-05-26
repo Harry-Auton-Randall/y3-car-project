@@ -24,6 +24,8 @@ public class ScoreManager : MonoBehaviour
             Resources.Load("TrackImages/track2Image", typeof(Texture2D)) as Texture2D, "Track2"));
         trackInfos.Add(new TrackInfo("Ampersand Circuit", 12,
             Resources.Load("TrackImages/track3Image", typeof(Texture2D)) as Texture2D, "Track3"));
+        trackInfos.Add(new TrackInfo("Multiple Routes Track", 10,
+            Resources.Load("TrackImages/track4Image", typeof(Texture2D)) as Texture2D, "Track4"));
 
         filePath = Path.Combine(Application.persistentDataPath, fileName);
         Debug.Log(filePath);
