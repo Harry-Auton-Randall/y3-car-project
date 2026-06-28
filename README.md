@@ -2,19 +2,19 @@ This is a simple racing game which I made for a University module. The player ca
 
 CONTROLS - KEYBOARD
 
-WASD = move (W and S for acceleration/braking, A and D for steering)\
-Arrow keys = look around with the camera\
-T = reset your car to the centre of the track (intended for if you get stuck, but can be done at any time)\
-Esc = pause/unpause
+WASD - move (W and S for acceleration/braking, A and D for steering)\
+Arrow keys - look around with the camera\
+T - reset your car to the centre of the track (intended for if you get stuck, but can be done at any time)\
+Esc - pause/unpause
 
 CONTROLS - CONTROLLER
 
-Right trigger = accelerate\
-Left trigger = brake/reverse\
-Left stick = steer\
-Right stick = rotate camera\
-"East button" (B for xbox, O for playstation, etc) = reset\
-Start button = pause/unpause
+Right trigger - accelerate\
+Left trigger - brake/reverse\
+Left stick - steer\
+Right stick - rotate camera\
+"East button" (B for xbox, O for playstation, etc) - reset\
+Start button - pause/unpause
 - Note: The game's menus can only be navigated with a mouse cursor
 
 TRACK SELECT REQUIREMENTS
