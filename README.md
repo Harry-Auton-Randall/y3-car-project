@@ -29,6 +29,6 @@ CREDITS
 
 The engine's sound effect was sourced from: https://opengameart.org/content/car-engine-loop-96khz-4s  
 All other assets were created by me using the following software:
-- Blender - 3D models
+- Blender - 3D models - https://www.blender.org/
 - Pixilart - textures - https://www.pixilart.com/
 - Chiptone - the sound effects that play during the race's start and when crossing the finish line - https://sfbgames.itch.io/chiptone
