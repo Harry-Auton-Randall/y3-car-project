@@ -12,6 +12,15 @@ public class CarControlAI : MonoBehaviour
     Vector3 waypointDirection;
     float waypointAngle;
 
+    //stuff for AI steering version 2
+    //Vector3 waypointDirectionGlobal;
+    //Transform waypointDirectionTransform;
+    //Vector3 waypointDirectionToCarPosition;
+    //float waypointDirectionToCarRadius;
+    //float waypointDirectionToCarAngle;
+    //Quaternion steeringTargetRot;
+    //float steeringTargetRotY;
+
     float maxSteering;
     float targetSpeed;
     float targetSpeedFraction;
@@ -56,7 +65,9 @@ public class CarControlAI : MonoBehaviour
         carMovement = GetComponent<CarMovement>();
         rb = GetComponent<Rigidbody>();
         waypointMask = (1 << LayerMask.NameToLayer("Waypoint"));
-        targetWaypointRandomPos = new GameObject("AiCarTargetWaypointPos").transform; //NEW
+        //waypointMask = (1 << LayerMask.NameToLayer("Waypoint")) | (1 << LayerMask.NameToLayer("Wall"));
+        targetWaypointRandomPos = new GameObject("AiCarTargetWaypointPos").transform;
+        //waypointDirectionTransform = new GameObject("AiCarWaypointDirection").transform;
     }
     void Start()
     {
@@ -233,7 +244,7 @@ public class CarControlAI : MonoBehaviour
 
     void Update()
     {
-        //Draw rays - CHANGED
+        //Draw rays
         frontBackRays[0] = new Ray(transform.position + (transform.right * -0.89f), transform.forward);
         frontBackRays[1] = new Ray(transform.position, transform.forward);
         frontBackRays[2] = new Ray(transform.position + (transform.right * 0.89f), transform.forward);
@@ -247,7 +258,7 @@ public class CarControlAI : MonoBehaviour
         //Makes the rays visible in Scene view
         for (int i=0;i<6;i++)
         {
-            Debug.DrawRay(frontBackRays[i].origin, frontBackRays[i].direction * frontRayDist, Color.yellow); //CHANGED
+            Debug.DrawRay(frontBackRays[i].origin, frontBackRays[i].direction * frontRayDist, Color.yellow);
         }
         Debug.DrawRay(waypointRotationRay.origin, 
             waypointRotationRay.direction * 1000, Color.yellow);
@@ -268,7 +279,7 @@ public class CarControlAI : MonoBehaviour
         {
             for (int i=0;i<3;i++)
             {
-                if (Physics.Raycast(frontBackRays[i], out rayHit, frontRayDist, ~(waypointMask))) //CHANGED
+                if (Physics.Raycast(frontBackRays[i], out rayHit, frontRayDist, ~(waypointMask)))
                 {
                     reversing = true;
                     break;
@@ -278,7 +289,7 @@ public class CarControlAI : MonoBehaviour
         //Disables reversing if the car's rear touches something
         for (int i = 3; i < 6; i++)
         {
-            if (Physics.Raycast(frontBackRays[i], out rayHit, frontRayDist, ~(waypointMask))) //CHANGED
+            if (Physics.Raycast(frontBackRays[i], out rayHit, frontRayDist, ~(waypointMask)))
             {
                 reversing = false;
                 break;
@@ -296,12 +307,12 @@ public class CarControlAI : MonoBehaviour
         //targetWaypointRandomPos is set to the transform of the targetWaypoint,
         // + some random deviation on its x axis
         targetWaypointRandomPos.position = targetWaypoints[0].position
-            + (targetWaypoints[0].right * targetWaypointOffset * waypointOffsetMult); //CHANGED
+            + (targetWaypoints[0].right * targetWaypointOffset * waypointOffsetMult);
         targetWaypointRandomPos.rotation = targetWaypoints[0].rotation;
 
         //Find the car's position/angle relative to the next waypoint
         waypointToCarPosition = targetWaypointRandomPos
-            .InverseTransformPoint(transform.position); //CHANGED
+            .InverseTransformPoint(transform.position);
         waypointToCarPosition.y = 0;
         waypointToCarAngle = Vector3.Angle(Vector3.forward * -1, waypointToCarPosition);
 
@@ -315,8 +326,9 @@ public class CarControlAI : MonoBehaviour
         else
         {
             waypointDirection = transform.InverseTransformPoint
-                (targetWaypointRandomPos.position); //CHANGED
+                (targetWaypointRandomPos.position);
         }
+        //waypointDirectionGlobal = transform.TransformPoint(waypointDirection);
         waypointDirection.y = 0;
         waypointAngle = Vector3.SignedAngle(Vector3.forward, waypointDirection, Vector3.up);
 
@@ -338,6 +350,7 @@ public class CarControlAI : MonoBehaviour
         //Steering
 
         maxSteering = carMovement.steerRange * carMovement.steerRangeFraction;
+        // VERSION 1
         //Attempt to follow a more natural curve towards target waypoint
         if (carTurningAngle <= 10 && !reversing && !waypointAimStraight &&
             (Mathf.Abs(targetWaypoints[0].transform.eulerAngles.y - this.transform.eulerAngles.y) > 3))
@@ -368,6 +381,59 @@ public class CarControlAI : MonoBehaviour
         {
             steerIn *= -1;
         }
+
+        // VERSION 2
+        ////figure out the turning angle from the targetWaypoint to the car
+        //waypointDirectionTransform.position = waypointDirectionGlobal;
+        //waypointDirectionTransform.rotation = targetWaypoints[0].rotation;
+        //waypointDirectionToCarPosition = CalculateTurningEnd(waypointDirectionTransform, this.transform) * -1;
+        //waypointDirectionToCarRadius = CalculateTurningRadius(waypointDirectionToCarPosition);
+        //waypointDirectionToCarAngle = CalculateTurningAngle(waypointDirectionToCarPosition, waypointDirectionToCarRadius);
+        ////figures out if its a left or right turn
+        //if (waypointDirectionTransform.InverseTransformPoint(this.transform.position).x > 0)
+        //{
+        //    waypointDirectionToCarAngle *= -1;
+        //}
+
+        ////finds the global rotation that the car should be aiming for, relative to the car itself
+        //steeringTargetRot = targetWaypoints[0].rotation;
+        //steeringTargetRot *= Quaternion.AngleAxis(waypointDirectionToCarAngle, Vector3.up); //rotates around local Y axis
+        //steeringTargetRot *= Quaternion.Inverse(transform.rotation); //makes it relative to the car
+        //steeringTargetRotY = steeringTargetRot.eulerAngles.y;
+        //if (steeringTargetRotY > 180)
+        //{
+        //    steeringTargetRotY -= 360;
+        //}
+
+        ////actual steering
+        ////Ignores steering and goes straight if 1. steeringTargetRotY and waypointAngle are on opposite sides and 2. the car's aiming at the targetWaypoint
+        //if (!
+        //    ((Physics.Raycast(waypointRotationRay, out rayHit, Mathf.Infinity, waypointMask) && rayHit.transform == targetWaypoints[0])
+        //    && (waypointAngle * steeringTargetRotY < 0)))
+        //{
+        //    if (steeringTargetRotY >= maxSteering)
+        //    {
+        //        steerIn = 1;
+        //    }
+        //    else if (steeringTargetRotY <= maxSteering * -1)
+        //    {
+        //        steerIn = -1;
+        //    }
+        //    else
+        //    {
+        //        steerIn = steeringTargetRotY / maxSteering;
+        //        reversing = false;
+        //    }
+        //}
+        //else
+        //{
+        //    steerIn = 0;
+        //}
+        ////Invert steering if going backwards
+        //if (carMovement.currentSpeed < 0)
+        //{
+        //    steerIn *= -1;
+        //}
 
         //If reversing, override all speed calculations and set motorIn to -1
         if (reversing)
