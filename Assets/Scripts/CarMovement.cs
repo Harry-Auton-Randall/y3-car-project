@@ -314,6 +314,13 @@ public class CarMovement : MonoBehaviour
             carCollisions -= 1;
         }
     }
+    //void OnTriggerStay(Collider collision)
+    //{
+    //    if (collision.gameObject.layer == waypointLayer && isPlayer)
+    //    {
+    //        collision.GetComponent<Waypoint>().UpdateRoute(this.transform.position, rb.linearVelocity);
+    //    }
+    //}
 
     
     public void EnableRaceStarted()
