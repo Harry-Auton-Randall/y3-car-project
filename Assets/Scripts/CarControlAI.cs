@@ -1,4 +1,40 @@
 using UnityEngine;
+using System.Collections.Generic;
+
+[System.Serializable] public struct UpcomingWaypointInfo
+{
+    public Transform baseT;
+    public Transform pathingNode;
+    public Waypoint script;
+    public Vector3 startRelativePos, endRelativePos;
+    public float turnRadius, turnSpeed, turnAngle, turnDist;
+
+    public UpcomingWaypointInfo(Transform turnStart, Transform turnEnd)
+    {
+        //initialises everything, so "this" can be used
+        turnRadius = 0;
+        turnSpeed = 0;
+        turnAngle = 0;
+        turnDist = 0;
+        startRelativePos = Vector3.zero;
+        endRelativePos = Vector3.zero;
+
+        baseT = turnEnd;
+        pathingNode = turnEnd.Find("PathingNode");
+        script = turnEnd.GetComponent<Waypoint>();
+        this.UpdateInfo(turnStart);
+    }
+    public void UpdateInfo(Transform turnStart)
+    {
+        endRelativePos = CarControlAI.CalculateTurningEnd(turnStart, pathingNode);
+        startRelativePos = CarControlAI.CalculateTurningEnd(pathingNode, turnStart);
+        startRelativePos.x *= -1; //calculated as if the end waypoint is facing backwards
+        startRelativePos.z *= -1;
+        turnRadius = CarControlAI.CalculateTurningRadius(startRelativePos);
+        turnAngle = CarControlAI.CalculateTurningAngle(startRelativePos, turnRadius);
+        turnDist = CarControlAI.CalculateTurningCircumference(turnAngle, turnRadius);
+    }
+}
 
 public class CarControlAI : MonoBehaviour
 {
@@ -32,6 +68,8 @@ public class CarControlAI : MonoBehaviour
     float targetWaypointOffset;
     public float waypointOffsetMult = 1f;
     bool waypointAimStraight;
+
+    List<UpcomingWaypointInfo> upcomingWaypoints = new List<UpcomingWaypointInfo>();
 
     Vector3[] waypointTurningEnds;
     float[] waypointTurningRadii;
@@ -81,13 +119,54 @@ public class CarControlAI : MonoBehaviour
         }
     }
 
-    public void UpdateWaypoint(Collider currentWaypointIn, Collider[] nextWaypointsIn)
+    public void UpdateWaypoint(Collider newCurrentWaypoint, Collider[] nextWaypointsIn)
     {
-        if (nextWaypoints == null) //start of race / no nextWaypoints
+        //checks for incorrect waypoint hit, aka the car's taken a wrong turn and must recalculate its route
+        //Clears the whole list, which will be re-filled
+        if (upcomingWaypoints.Count > 0 && newCurrentWaypoint.transform != upcomingWaypoints[0].baseT)
+        {
+            upcomingWaypoints.Clear();
+        }
+        //Trims the list if bigger than waypointsAhead allows
+        while (upcomingWaypoints.Count > waypointsAhead)
+        {
+            upcomingWaypoints.RemoveAt(waypointsAhead);
+        }
+        //If the list's empty, add an entry with the end set to the new waypoint
+        //Its other contents don't matter, because it gets deleted after the while loop. Its just needed to start said while loop
+        if (upcomingWaypoints.Count == 0)
+        {
+            upcomingWaypoints.Add(new UpcomingWaypointInfo(this.transform, newCurrentWaypoint.transform));
+        }
+        //Add as many new entries as needed to fill up to waypointsAhead (+1 to account for the 0th entry not being deleted yet)
+        while(upcomingWaypoints.Count < waypointsAhead + 1)
+        {
+            int uWIndex = upcomingWaypoints.Count - 1;
+            //If the route ends (no more nextWaypoints), stop adding entries
+            if (upcomingWaypoints[uWIndex].script.nextWaypoints == null
+                || upcomingWaypoints[uWIndex].script.nextWaypoints.Length == 0)
+            {
+                break;
+            }
+            upcomingWaypoints.Add(new UpcomingWaypointInfo(
+                upcomingWaypoints[uWIndex].pathingNode,
+                FindNextWaypoint(upcomingWaypoints[uWIndex].script.nextWaypoints))
+            );
+        }
+        //Remove the 0th entry, because its the waypoint that was just passed and doesn't need to be targeted
+        upcomingWaypoints.RemoveAt(0);
+
+        //return;
+
+        if (nextWaypoints == null)
         {
             RecalcWaypoints(nextWaypointsIn);
         }
-        else if (currentWaypointIn.transform == targetWaypoints[0]) //correct waypoint hit
+        else if (newCurrentWaypoint.transform != targetWaypoints[0]) //incorrect waypoint hit
+        {
+            RecalcWaypoints(nextWaypointsIn);
+        }
+        else //correct waypoint hit
         {
             nextWaypoints = nextWaypointsIn;
             for (int i=0;i<waypointsAhead - 1; i++)
@@ -127,13 +206,9 @@ public class CarControlAI : MonoBehaviour
             }
             else
             {
-                waypointTurningDists[waypointsAhead - 2] = CalculateTurningDist
+                waypointTurningDists[waypointsAhead - 2] = CalculateTurningCircumference
                     (waypointTurningAngles[waypointsAhead - 2], waypointTurningRadii[waypointsAhead - 2]);
             }
-        }
-        else //incorrect waypoint hit
-        {
-            RecalcWaypoints(nextWaypointsIn);
         }
 
         targetWaypointOffset = Random.Range(
@@ -180,42 +255,44 @@ public class CarControlAI : MonoBehaviour
             }
             else
             {
-                waypointTurningDists[i] = CalculateTurningDist
+                waypointTurningDists[i] = CalculateTurningCircumference
                     (waypointTurningAngles[i], waypointTurningRadii[i]);
             }
         }
     }
 
-    Transform FindNextWaypoint(Collider[] current)
+    static Transform FindNextWaypoint(Collider[] nextWaypoints)
     {
-        if (current.Length == 1)
-        {
-            return current[0].transform;
-        }
-        else
-        {
-            return current[Random.Range(0, current.Length)].transform;
-        }
+        return (nextWaypoints.Length == 1) ? nextWaypoints[0].transform
+            : nextWaypoints[Random.Range(0, nextWaypoints.Length)].transform;
+        //if (nextWaypoints.Length == 1)
+        //{
+        //    return nextWaypoints[0].transform;
+        //}
+        //else
+        //{
+        //    return nextWaypoints[Random.Range(0, nextWaypoints.Length)].transform;
+        //}
     }
 
-    Vector3 CalculateTurningEnd(Transform startPos, Transform endPos)
+    public static Vector3 CalculateTurningEnd(Transform startPos, Transform endPos)
     {
         return startPos.InverseTransformPoint(endPos.position);
     }
 
-    float CalculateTurningRadius(Vector3 localEndPos)
+    public static float CalculateTurningRadius(Vector3 localEndPos)
     {
         return Mathf.Abs(
             (Mathf.Pow(localEndPos.x, 2) + Mathf.Pow(localEndPos.z, 2))
             / (2 * localEndPos.x));
     }
 
-    float CalculateTurningSpeed(float turnRadius)
+    public static float CalculateTurningSpeed(float turnRadius)
     {
         return 2.95258f * Mathf.Pow(turnRadius, 0.542118f);
     }
 
-    float CalculateTurningAngle(Vector3 localEndPos, float turnRadius)
+    public static float CalculateTurningAngle(Vector3 localEndPos, float turnRadius)
     {
         if (turnRadius == Mathf.Infinity)
         {
@@ -237,7 +314,7 @@ public class CarControlAI : MonoBehaviour
         }
     }
 
-    float CalculateTurningDist(float turnAngle, float turnRadius)
+    public static float CalculateTurningCircumference(float turnAngle, float turnRadius)
     {
         return (Mathf.PI * 2 * turnRadius * (turnAngle / 360f));
     }
@@ -342,7 +419,7 @@ public class CarControlAI : MonoBehaviour
         }
         else
         {
-            carTurningDist = CalculateTurningDist
+            carTurningDist = CalculateTurningCircumference
                 (carTurningAngle, carTurningRadius);
         }
 
