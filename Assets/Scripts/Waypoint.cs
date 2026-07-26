@@ -16,7 +16,7 @@ public class Waypoint : MonoBehaviour
     public int lapWaypointValue;
     public Collider nextLapWaypoint;
 
-    void Start()
+    void Update()
     {
         for (int i = 0; i < nextWaypoints.Length; i++)
         {
@@ -34,7 +34,7 @@ public class Waypoint : MonoBehaviour
         )
         {
             int segments = 32;
-            float duration = 9999999;
+            float duration = 0;
 
             Color c = Color.green;
 

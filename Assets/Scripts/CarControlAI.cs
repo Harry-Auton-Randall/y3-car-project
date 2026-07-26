@@ -9,6 +9,21 @@ using System.Collections.Generic;
     public Vector3 startRelativePos, endRelativePos;
     public float turnRadius, turnSpeed, turnAngle, turnDist;
 
+    public UpcomingWaypointInfo(Transform turnStart, Transform turnEnd, Transform turnEndExtra)
+    {
+        //initialises everything, so "this" can be used
+        turnRadius = 0;
+        turnSpeed = 0;
+        turnAngle = 0;
+        turnDist = 0;
+        startRelativePos = Vector3.zero;
+        endRelativePos = Vector3.zero;
+
+        baseT = turnEnd;
+        pathingNode = turnEndExtra;
+        script = turnEnd.GetComponent<Waypoint>();
+        this.UpdateInfo(turnStart);
+    }
     public UpcomingWaypointInfo(Transform turnStart, Transform turnEnd)
     {
         //initialises everything, so "this" can be used
@@ -72,7 +87,13 @@ public class CarControlAI : MonoBehaviour
     public float waypointOffsetMult = 1f;
     bool waypointAimStraight;
 
+    Quaternion carRotRelativeToWaypoint;
+    float carRotRelativeToWaypointY;
+    Transform frontWheelMidpoint;
+    Vector3 frontWheelMidpointDefaultPos;
+
     List<UpcomingWaypointInfo> upcomingWaypoints = new List<UpcomingWaypointInfo>();
+    UpcomingWaypointInfo steeringArc;
 
     Vector3[] waypointTurningEnds;
     float[] waypointTurningRadii;
@@ -108,6 +129,9 @@ public class CarControlAI : MonoBehaviour
         waypointMask = (1 << LayerMask.NameToLayer("Waypoint"));
         //waypointMask = (1 << LayerMask.NameToLayer("Waypoint")) | (1 << LayerMask.NameToLayer("Wall"));
         targetWaypointRandomPos = new GameObject("AiCarTargetWaypointPos").transform;
+        frontWheelMidpoint = transform.Find("FrontWheelMidpoint").transform;
+        frontWheelMidpointDefaultPos = frontWheelMidpoint.localPosition;
+
         //waypointDirectionTransform = new GameObject("AiCarWaypointDirection").transform;
     }
     void Start()
@@ -346,7 +370,7 @@ public class CarControlAI : MonoBehaviour
         frontBackRays[4] = new Ray(transform.position, transform.forward * -1);
         frontBackRays[5] = new Ray(transform.position + (transform.right * 0.89f), transform.forward * -1);
 
-        waypointRotationRay = new Ray(transform.position, upcomingWaypoints[0].baseT.forward);
+        waypointRotationRay = new Ray(transform.position, upcomingWaypoints[0].pathingNode.forward);
 
         //Makes the rays visible in Scene view
         for (int i=0;i<6;i++)
@@ -354,7 +378,7 @@ public class CarControlAI : MonoBehaviour
             Debug.DrawRay(frontBackRays[i].origin, frontBackRays[i].direction * frontRayDist, Color.yellow);
         }
         Debug.DrawRay(waypointRotationRay.origin, 
-            waypointRotationRay.direction * 1000, Color.yellow);
+            waypointRotationRay.direction * 10, Color.yellow);
 
         //check how long the car's been stationary
         if (rb.linearVelocity.magnitude < 0.5f)
@@ -411,17 +435,59 @@ public class CarControlAI : MonoBehaviour
         tempUWI.SetTurnSpeed(CalculateTurningSpeed(tempUWI.turnRadius));
         upcomingWaypoints[0] = tempUWI;
 
+        //STEERING
+        //If close enough to the target waypoint, steer towards the next one. Prevents sharp turning when close to the target waypoint
+        bool closeToNextWaypoint;
+        if (Physics.Raycast(waypointRotationRay, out rayHit, 10, waypointMask) && rayHit.transform == upcomingWaypoints[0].baseT && upcomingWaypoints.Count < 1)
+        {
+            targetWaypointRandomPos.position = upcomingWaypoints[1].pathingNode.position;
+            targetWaypointRandomPos.rotation = upcomingWaypoints[1].pathingNode.rotation;
+            closeToNextWaypoint = true;
+        }
+        else
+        {
+            targetWaypointRandomPos.position = upcomingWaypoints[0].pathingNode.position;
+            targetWaypointRandomPos.position += (targetWaypointOffset * waypointOffsetMult * upcomingWaypoints[0].baseT.right);
+            targetWaypointRandomPos.rotation = upcomingWaypoints[0].pathingNode.rotation;
+            closeToNextWaypoint = false;
+        }
 
+        //Move frontWheelMidpoint to where it's predicted to be in a moment
+        //frontWheelMidpoint.localPosition = frontWheelMidpointDefaultPos;
+        //frontWheelMidpoint.position += Vector3.forward * 0.1f * carMovement.currentSpeed;
 
-        waypointDirection = transform.InverseTransformPoint(upcomingWaypoints[0].pathingNode.position);
-        waypointDirection.y = 0;
+        //Casts an arc from the target back towards the car, and aligns the car's wheels with it
+        steeringArc = new UpcomingWaypointInfo(frontWheelMidpoint, targetWaypointRandomPos, targetWaypointRandomPos);
+
+        if (steeringArc.startRelativePos.x < 0) { steeringArc.turnAngle *= -1; }
+
+        carRotRelativeToWaypoint = Quaternion.Inverse(steeringArc.baseT.rotation) * this.transform.rotation;
+        carRotRelativeToWaypointY = carRotRelativeToWaypoint.eulerAngles.y;
+        if (carRotRelativeToWaypointY > 180)
+        {
+            carRotRelativeToWaypointY -= 360;
+        }
+
         steerIn = SetSteering(
-            Vector3.SignedAngle(Vector3.forward, waypointDirection, Vector3.up), 
+            steeringArc.turnAngle - carRotRelativeToWaypointY,
             carMovement.steerRange * carMovement.steerRangeFraction
             );
 
         if (reversing && Mathf.Abs(steerIn) < 1) { reversing = false; }
         if (carMovement.currentSpeed < 0) { steerIn *= -1; }
+
+        Waypoint.DebugArc.Draw(steeringArc.baseT.position, frontWheelMidpoint.position, steeringArc.baseT.forward * -1);
+
+
+        //waypointDirection = transform.InverseTransformPoint(upcomingWaypoints[0].pathingNode.position);
+        //waypointDirection.y = 0;
+        //steerIn = SetSteering(
+        //    Vector3.SignedAngle(Vector3.forward, waypointDirection, Vector3.up), 
+        //    carMovement.steerRange * carMovement.steerRangeFraction
+        //    );
+
+        //ACCELERATION
+        steeringArc.turnSpeed = CalculateTurningSpeed(steeringArc.turnRadius);
 
         if (reversing) { motorIn = SetMotor(-speedLimit, carMovement.currentSpeed); }
         else
@@ -430,8 +496,10 @@ public class CarControlAI : MonoBehaviour
             float totalDist = 0;
             float finalV;
 
-            //if (upcomingWaypoints[0].turnSpeed < lowestSpeed) { lowestSpeed = upcomingWaypoints[0].turnSpeed; }
+            if (steeringArc.turnSpeed < lowestSpeed && !closeToNextWaypoint) { lowestSpeed = steeringArc.turnSpeed; }
 
+            //For each upcoming waypoint, figures out if its going too fast for its turn and needs to brake
+            //(uses SUVAT equation to find its final velocity if it spend the entire distance braking)
             if (upcomingWaypoints.Count > 1)
             {
                 for (int i = 1; i < upcomingWaypoints.Count; i++)
@@ -695,6 +763,6 @@ public class CarControlAI : MonoBehaviour
 
         return (currentRelativeToDesired > proportional) ? -1 :
                (currentRelativeToDesired < -proportional) ? 1 :
-               0;// -(currentRelativeToDesired / proportional);
+               -(currentRelativeToDesired / proportional);
     }
 }
