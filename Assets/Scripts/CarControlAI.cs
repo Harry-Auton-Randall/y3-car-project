@@ -34,6 +34,7 @@ using System.Collections.Generic;
         turnAngle = CarControlAI.CalculateTurningAngle(startRelativePos, turnRadius);
         turnDist = CarControlAI.CalculateTurningCircumference(turnAngle, turnRadius);
     }
+    public void SetTurnSpeed(float speedIn) { turnSpeed = speedIn; }
 }
 
 public class CarControlAI : MonoBehaviour
@@ -60,6 +61,8 @@ public class CarControlAI : MonoBehaviour
     float maxSteering;
     float targetSpeed;
     float targetSpeedFraction;
+
+    float speedLimit = 999;
 
     Collider[] nextWaypoints;
     Transform[] targetWaypoints;
@@ -156,7 +159,20 @@ public class CarControlAI : MonoBehaviour
         //Remove the 0th entry, because its the waypoint that was just passed and doesn't need to be targeted
         upcomingWaypoints.RemoveAt(0);
 
-        //return;
+        UpcomingWaypointInfo tempUWI;
+        for(int i=0;i<upcomingWaypoints.Count;i++)
+        {
+            tempUWI = upcomingWaypoints[i];
+            tempUWI.SetTurnSpeed(CalculateTurningSpeed(tempUWI.turnRadius));
+            upcomingWaypoints[i] = tempUWI;
+        }
+
+        targetWaypointOffset = Random.Range(
+            -(upcomingWaypoints[0].script.offsetLimitLeft),
+            upcomingWaypoints[0].script.offsetLimitRight
+        );
+
+        return;
 
         if (nextWaypoints == null)
         {
@@ -330,7 +346,7 @@ public class CarControlAI : MonoBehaviour
         frontBackRays[4] = new Ray(transform.position, transform.forward * -1);
         frontBackRays[5] = new Ray(transform.position + (transform.right * 0.89f), transform.forward * -1);
 
-        waypointRotationRay = new Ray(transform.position, targetWaypoints[0].forward);
+        waypointRotationRay = new Ray(transform.position, upcomingWaypoints[0].baseT.forward);
 
         //Makes the rays visible in Scene view
         for (int i=0;i<6;i++)
@@ -380,6 +396,63 @@ public class CarControlAI : MonoBehaviour
             timeStill = 0;
             reversing = false;
         }
+
+        //BEGINNING OF NEW STUFF
+
+        if (upcomingWaypoints == null || upcomingWaypoints.Count == 0)
+        {
+            motorIn = SetMotor(0, carMovement.currentSpeed);
+            steerIn = 0;
+            return;
+        }
+        //Updates first upcomingWaypoint entry with the car's stuff
+        UpcomingWaypointInfo tempUWI = upcomingWaypoints[0];
+        tempUWI.UpdateInfo(this.transform);
+        tempUWI.SetTurnSpeed(CalculateTurningSpeed(tempUWI.turnRadius));
+        upcomingWaypoints[0] = tempUWI;
+
+
+
+        waypointDirection = transform.InverseTransformPoint(upcomingWaypoints[0].pathingNode.position);
+        waypointDirection.y = 0;
+        steerIn = SetSteering(
+            Vector3.SignedAngle(Vector3.forward, waypointDirection, Vector3.up), 
+            carMovement.steerRange * carMovement.steerRangeFraction
+            );
+
+        if (reversing && Mathf.Abs(steerIn) < 1) { reversing = false; }
+        if (carMovement.currentSpeed < 0) { steerIn *= -1; }
+
+        if (reversing) { motorIn = SetMotor(-speedLimit, carMovement.currentSpeed); }
+        else
+        {
+            float lowestSpeed = speedLimit;
+            float totalDist = 0;
+            float finalV;
+
+            //if (upcomingWaypoints[0].turnSpeed < lowestSpeed) { lowestSpeed = upcomingWaypoints[0].turnSpeed; }
+
+            if (upcomingWaypoints.Count > 1)
+            {
+                for (int i = 1; i < upcomingWaypoints.Count; i++)
+                {
+                    totalDist += upcomingWaypoints[i-1].turnDist;
+                    finalV = GetFinalVelocity(carMovement.currentSpeed, brakingSpeed, totalDist);
+                    if (finalV >= upcomingWaypoints[i].turnSpeed && upcomingWaypoints[i].turnSpeed < lowestSpeed)
+                    {
+                        lowestSpeed = upcomingWaypoints[i].turnSpeed;
+                    }
+                }
+            }
+
+            motorIn = SetMotor(lowestSpeed, carMovement.currentSpeed);
+        }
+
+        carMovement.SetMotorIn(motorIn);
+        carMovement.SetSteerIn(steerIn);
+
+        return;
+
 
         //targetWaypointRandomPos is set to the transform of the targetWaypoint,
         // + some random deviation on its x axis
@@ -587,5 +660,41 @@ public class CarControlAI : MonoBehaviour
 
         carMovement.SetMotorIn(motorIn);
         carMovement.SetSteerIn(steerIn);
+    }
+
+    static float GetFinalVelocity(float u, float a, float s)
+    {
+        float v2 = (u * u) - (2 * a * s);
+        return Mathf.Sqrt(v2);
+    }
+
+    static float SetSteering(float desiredAngle, float maxAngle)
+    {
+        return (desiredAngle > maxAngle) ? 1 :
+               (desiredAngle < -maxAngle) ? -1 :
+               (desiredAngle / maxAngle);
+
+        //if (desiredAngle > maxAngle)
+        //{
+        //    return 1;
+        //}
+        //else if (desiredAngle < maxAngle * -1)
+        //{
+        //    return -1;
+        //}
+        //else
+        //{
+        //    return desiredAngle / maxAngle;
+        //}
+    }
+
+    static float SetMotor(float desiredSpeed, float currentSpeed)
+    {
+        float currentRelativeToDesired = currentSpeed - desiredSpeed;
+        float proportional = 1;
+
+        return (currentRelativeToDesired > proportional) ? -1 :
+               (currentRelativeToDesired < -proportional) ? 1 :
+               0;// -(currentRelativeToDesired / proportional);
     }
 }
