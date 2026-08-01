@@ -5443,11 +5443,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6615020253962009167, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
   m_PrefabInstance: {fileID: 1178693447}
   m_PrefabAsset: {fileID: 0}
---- !u!65 &1178693449 stripped
-BoxCollider:
-  m_CorrespondingSourceObject: {fileID: 6961845938863922947, guid: 8ba350174a5c17f4db986d00596ed335, type: 3}
-  m_PrefabInstance: {fileID: 1178693447}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1208304034
 GameObject:
   m_ObjectHideFlags: 0
@@ -5492,7 +5487,7 @@ MonoBehaviour:
   - {fileID: 1315517923}
   - {fileID: 1213184814}
   - {fileID: 878700677}
-  - {fileID: 1178693449}
+  - {fileID: 804805121}
   - {fileID: 2092805335}
   - {fileID: 663345975}
   - {fileID: 1764487936}
