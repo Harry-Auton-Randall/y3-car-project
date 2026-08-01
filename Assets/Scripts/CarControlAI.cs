@@ -370,7 +370,7 @@ public class CarControlAI : MonoBehaviour
         frontBackRays[4] = new Ray(transform.position, transform.forward * -1);
         frontBackRays[5] = new Ray(transform.position + (transform.right * 0.89f), transform.forward * -1);
 
-        waypointRotationRay = new Ray(transform.position, upcomingWaypoints[0].pathingNode.forward);
+        waypointRotationRay = new Ray(transform.position, upcomingWaypoints[0].baseT.forward);
 
         //Makes the rays visible in Scene view
         for (int i=0;i<6;i++)
@@ -438,7 +438,7 @@ public class CarControlAI : MonoBehaviour
         //STEERING
         //If close enough to the target waypoint, steer towards the next one. Prevents sharp turning when close to the target waypoint
         bool closeToNextWaypoint;
-        if (Physics.Raycast(waypointRotationRay, out rayHit, 10, waypointMask) && rayHit.transform == upcomingWaypoints[0].baseT && upcomingWaypoints.Count < 1)
+        if (Physics.Raycast(waypointRotationRay, out rayHit, 10, waypointMask) && rayHit.transform == upcomingWaypoints[0].baseT && upcomingWaypoints.Count > 1)
         {
             targetWaypointRandomPos.position = upcomingWaypoints[1].pathingNode.position;
             targetWaypointRandomPos.rotation = upcomingWaypoints[1].pathingNode.rotation;
