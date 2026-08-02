@@ -187,7 +187,7 @@ public class CarControlAI : MonoBehaviour
         for(int i=0;i<upcomingWaypoints.Count;i++)
         {
             tempUWI = upcomingWaypoints[i];
-            tempUWI.SetTurnSpeed(CalculateTurningSpeed(tempUWI.turnRadius));
+            tempUWI.SetTurnSpeed(CalculateTurningSpeed(tempUWI.turnRadius, tempUWI.script.aiTurnSpeedMult));
             upcomingWaypoints[i] = tempUWI;
         }
 
@@ -235,7 +235,7 @@ public class CarControlAI : MonoBehaviour
                 (waypointTurningEnds[waypointsAhead - 2]);
 
             waypointTurningSpeeds[waypointsAhead - 2] = CalculateTurningSpeed
-                (waypointTurningRadii[waypointsAhead - 2]);
+                (waypointTurningRadii[waypointsAhead - 2], 1);
 
             waypointTurningAngles[waypointsAhead - 2] = CalculateTurningAngle
                 (waypointTurningEnds[waypointsAhead - 2], waypointTurningRadii[waypointsAhead - 2]);
@@ -284,7 +284,7 @@ public class CarControlAI : MonoBehaviour
 
             waypointTurningRadii[i] = CalculateTurningRadius(waypointTurningEnds[i]);
 
-            waypointTurningSpeeds[i] = CalculateTurningSpeed(waypointTurningRadii[i]);
+            waypointTurningSpeeds[i] = CalculateTurningSpeed(waypointTurningRadii[i], 1);
 
             waypointTurningAngles[i] = CalculateTurningAngle
                 (waypointTurningEnds[i], waypointTurningRadii[i]);
@@ -327,9 +327,9 @@ public class CarControlAI : MonoBehaviour
             / (2 * localEndPos.x));
     }
 
-    public static float CalculateTurningSpeed(float turnRadius)
+    public static float CalculateTurningSpeed(float turnRadius, float mult)
     {
-        return 2.95258f * Mathf.Pow(turnRadius, 0.542118f);
+        return mult * (2.95258f * Mathf.Pow(turnRadius, 0.542118f));
     }
 
     public static float CalculateTurningAngle(Vector3 localEndPos, float turnRadius)
@@ -432,7 +432,7 @@ public class CarControlAI : MonoBehaviour
         //Updates first upcomingWaypoint entry with the car's stuff
         UpcomingWaypointInfo tempUWI = upcomingWaypoints[0];
         tempUWI.UpdateInfo(this.transform);
-        tempUWI.SetTurnSpeed(CalculateTurningSpeed(tempUWI.turnRadius));
+        tempUWI.SetTurnSpeed(CalculateTurningSpeed(tempUWI.turnRadius, tempUWI.script.aiTurnSpeedMult));
         upcomingWaypoints[0] = tempUWI;
 
         //STEERING
@@ -453,8 +453,8 @@ public class CarControlAI : MonoBehaviour
         }
 
         //Move frontWheelMidpoint to where it's predicted to be in a moment
-        //frontWheelMidpoint.localPosition = frontWheelMidpointDefaultPos;
-        //frontWheelMidpoint.position += Vector3.forward * 0.1f * carMovement.currentSpeed;
+        frontWheelMidpoint.localPosition = frontWheelMidpointDefaultPos;
+        frontWheelMidpoint.localPosition += Vector3.forward * 0.1f * carMovement.currentSpeed;
 
         //Casts an arc from the target back towards the car, and aligns the car's wheels with it
         steeringArc = new UpcomingWaypointInfo(frontWheelMidpoint, targetWaypointRandomPos, targetWaypointRandomPos);
@@ -487,7 +487,7 @@ public class CarControlAI : MonoBehaviour
         //    );
 
         //ACCELERATION
-        steeringArc.turnSpeed = CalculateTurningSpeed(steeringArc.turnRadius);
+        steeringArc.turnSpeed = CalculateTurningSpeed(steeringArc.turnRadius, upcomingWaypoints[0].script.aiTurnSpeedMult);
 
         if (reversing) { motorIn = SetMotor(-speedLimit, carMovement.currentSpeed); }
         else
@@ -496,7 +496,7 @@ public class CarControlAI : MonoBehaviour
             float totalDist = 0;
             float finalV;
 
-            if (steeringArc.turnSpeed < lowestSpeed && !closeToNextWaypoint) { lowestSpeed = steeringArc.turnSpeed; }
+            if (steeringArc.turnSpeed < lowestSpeed) { lowestSpeed = steeringArc.turnSpeed; }
 
             //For each upcoming waypoint, figures out if its going too fast for its turn and needs to brake
             //(uses SUVAT equation to find its final velocity if it spend the entire distance braking)
@@ -552,7 +552,7 @@ public class CarControlAI : MonoBehaviour
 
         //Calculate the car's turning values - waypointDirection is the turningEnd
         carTurningRadius = CalculateTurningRadius(waypointDirection);
-        carTurningSpeed = CalculateTurningSpeed(carTurningRadius);
+        carTurningSpeed = CalculateTurningSpeed(carTurningRadius, 1);
         carTurningAngle = CalculateTurningAngle(waypointDirection, carTurningRadius);
         if (carTurningAngle == 0)
         {

@@ -16,6 +16,8 @@ public class Waypoint : MonoBehaviour
     public int lapWaypointValue;
     public Collider nextLapWaypoint;
 
+    public float aiTurnSpeedMult = 1;
+
     void Update()
     {
         for (int i = 0; i < nextWaypoints.Length; i++)
@@ -23,6 +25,13 @@ public class Waypoint : MonoBehaviour
             DebugArc.Draw(nextWaypoints[i].transform.Find("PathingNode").position, this.transform.Find("PathingNode").position, nextWaypoints[i].transform.Find("PathingNode").forward * -1);
         }
     }
+
+
+
+
+
+
+
 
     //AI-generated, just used for debugging
     public static class DebugArc
