@@ -8,6 +8,7 @@ using System.Collections.Generic;
     public Waypoint script;
     public Vector3 startRelativePos, endRelativePos;
     public float turnRadius, turnSpeed, turnAngle, turnDist;
+    public float offsetDist;
 
     public UpcomingWaypointInfo(Transform turnStart, Transform turnEnd, Transform turnEndExtra)
     {
@@ -18,6 +19,7 @@ using System.Collections.Generic;
         turnDist = 0;
         startRelativePos = Vector3.zero;
         endRelativePos = Vector3.zero;
+        offsetDist = 0;
 
         baseT = turnEnd;
         pathingNode = turnEndExtra;
@@ -33,6 +35,7 @@ using System.Collections.Generic;
         turnDist = 0;
         startRelativePos = Vector3.zero;
         endRelativePos = Vector3.zero;
+        offsetDist = 0;
 
         baseT = turnEnd;
         pathingNode = turnEnd.Find("PathingNode");
@@ -50,10 +53,27 @@ using System.Collections.Generic;
         turnDist = CarControlAI.CalculateTurningCircumference(turnAngle, turnRadius);
     }
     public void SetTurnSpeed(float speedIn) { turnSpeed = speedIn; }
+    public void SetOffsetDist(float startPoint, float leftLimit, float rightLimit)
+    {
+        float maxOffsetDistLeft = startPoint - (turnDist / 6f);
+        float maxOffsetDistRight = startPoint + (turnDist / 6f);
+        offsetDist = Random.Range(
+            Mathf.Max(leftLimit, maxOffsetDistLeft), 
+            Mathf.Min(rightLimit, maxOffsetDistRight)
+        );
+
+    }
+    public void SetOffsetDist(float startPoint)
+    {
+        SetOffsetDist(startPoint, script.offsetLimitLeft * -1, script.offsetLimitRight);
+    }
 }
 
 public class CarControlAI : MonoBehaviour
 {
+    public float aiSkill = 1; //0 = worst, 1 = best
+    float lowSkillTurnSpeedMult = 0.75f;
+
     CarMovement carMovement;
     Rigidbody rb;
     float timeStill;
@@ -83,7 +103,7 @@ public class CarControlAI : MonoBehaviour
     Transform[] targetWaypoints;
 
     Transform targetWaypointRandomPos;
-    float targetWaypointOffset;
+    float targetWaypointOffset = 0;
     public float waypointOffsetMult = 1f;
     bool waypointAimStraight;
 
@@ -148,11 +168,13 @@ public class CarControlAI : MonoBehaviour
 
     public void UpdateWaypoint(Collider newCurrentWaypoint, Collider[] nextWaypointsIn)
     {
+        UpcomingWaypointInfo tempUWI;
+
         //checks for incorrect waypoint hit, aka the car's taken a wrong turn and must recalculate its route
-        //Clears the whole list, which will be re-filled
+        //Clears the whole list, which will be re-filled. Doesn't delete the first entry (its offsetDist is needed)
         if (upcomingWaypoints.Count > 0 && newCurrentWaypoint.transform != upcomingWaypoints[0].baseT)
         {
-            upcomingWaypoints.Clear();
+            upcomingWaypoints.RemoveRange(1, upcomingWaypoints.Count - 1);
         }
         //Trims the list if bigger than waypointsAhead allows
         while (upcomingWaypoints.Count > waypointsAhead)
@@ -179,22 +201,31 @@ public class CarControlAI : MonoBehaviour
                 upcomingWaypoints[uWIndex].pathingNode,
                 FindNextWaypoint(upcomingWaypoints[uWIndex].script.nextWaypoints))
             );
+            tempUWI = upcomingWaypoints[uWIndex + 1];
+            tempUWI.SetOffsetDist(upcomingWaypoints[uWIndex].offsetDist);
+            upcomingWaypoints[uWIndex + 1] = tempUWI;
         }
-        //Remove the 0th entry, because its the waypoint that was just passed and doesn't need to be targeted
-        upcomingWaypoints.RemoveAt(0);
-
-        UpcomingWaypointInfo tempUWI;
-        for(int i=0;i<upcomingWaypoints.Count;i++)
+        //Adds all the turnSpeeds
+        
+        for (int i = 1; i < upcomingWaypoints.Count;i++)
         {
             tempUWI = upcomingWaypoints[i];
-            tempUWI.SetTurnSpeed(CalculateTurningSpeed(tempUWI.turnRadius, tempUWI.script.aiTurnSpeedMult));
+            tempUWI.SetTurnSpeed(CalculateTurningSpeed(tempUWI.turnRadius, tempUWI.script.aiTurnSpeedMult * Mathf.Lerp(lowSkillTurnSpeedMult, 1, aiSkill)));
+            //tempUWI.SetOffsetDist(upcomingWaypoints[i - 1].offsetDist);
             upcomingWaypoints[i] = tempUWI;
         }
 
-        targetWaypointOffset = Random.Range(
-            -(upcomingWaypoints[0].script.offsetLimitLeft),
-            upcomingWaypoints[0].script.offsetLimitRight
-        );
+        //Remove the 0th entry, because its the waypoint that was just passed and doesn't need to be targeted
+        upcomingWaypoints.RemoveAt(0);
+
+        ////targetWaypointOffset is measured in metres
+        ////Can change by 1m per 6m of waypoint distance
+        //float waypointMaxOffsetDistLeft = targetWaypointOffset - (upcomingWaypoints[0].turnDist / 10f);
+        //float waypointMaxOffsetDistRight = targetWaypointOffset + (upcomingWaypoints[0].turnDist / 10f);
+        //targetWaypointOffset = Random.Range(
+        //    Mathf.Max(-1 * upcomingWaypoints[0].script.offsetLimitLeft, waypointMaxOffsetDistLeft),
+        //    Mathf.Min(upcomingWaypoints[0].script.offsetLimitRight, waypointMaxOffsetDistRight)
+        //);
 
         return;
 
@@ -432,7 +463,7 @@ public class CarControlAI : MonoBehaviour
         //Updates first upcomingWaypoint entry with the car's stuff
         UpcomingWaypointInfo tempUWI = upcomingWaypoints[0];
         tempUWI.UpdateInfo(this.transform);
-        tempUWI.SetTurnSpeed(CalculateTurningSpeed(tempUWI.turnRadius, tempUWI.script.aiTurnSpeedMult));
+        tempUWI.SetTurnSpeed(CalculateTurningSpeed(tempUWI.turnRadius, tempUWI.script.aiTurnSpeedMult * Mathf.Lerp(lowSkillTurnSpeedMult, 1, aiSkill)));
         upcomingWaypoints[0] = tempUWI;
 
         //STEERING
@@ -441,13 +472,16 @@ public class CarControlAI : MonoBehaviour
         if (Physics.Raycast(waypointRotationRay, out rayHit, 10, waypointMask) && rayHit.transform == upcomingWaypoints[0].baseT && upcomingWaypoints.Count > 1)
         {
             targetWaypointRandomPos.position = upcomingWaypoints[1].pathingNode.position;
+            targetWaypointRandomPos.position += (upcomingWaypoints[1].offsetDist * upcomingWaypoints[1].baseT.right *
+                ((waypointOffsetMult + 2*(1 - aiSkill)) / 3f)); //Average of randomness due to racer count, and randomness due to AI skill. The latter is weighted twice as much.
             targetWaypointRandomPos.rotation = upcomingWaypoints[1].pathingNode.rotation;
             closeToNextWaypoint = true;
         }
         else
         {
             targetWaypointRandomPos.position = upcomingWaypoints[0].pathingNode.position;
-            targetWaypointRandomPos.position += (targetWaypointOffset * waypointOffsetMult * upcomingWaypoints[0].baseT.right);
+            targetWaypointRandomPos.position += (upcomingWaypoints[0].offsetDist * upcomingWaypoints[0].baseT.right *
+                ((waypointOffsetMult + 2*(1 - aiSkill)) / 3f));
             targetWaypointRandomPos.rotation = upcomingWaypoints[0].pathingNode.rotation;
             closeToNextWaypoint = false;
         }
@@ -487,7 +521,7 @@ public class CarControlAI : MonoBehaviour
         //    );
 
         //ACCELERATION
-        steeringArc.turnSpeed = CalculateTurningSpeed(steeringArc.turnRadius, upcomingWaypoints[0].script.aiTurnSpeedMult);
+        steeringArc.turnSpeed = CalculateTurningSpeed(steeringArc.turnRadius, upcomingWaypoints[0].script.aiTurnSpeedMult * Mathf.Lerp(1, lowSkillTurnSpeedMult, aiSkill));
 
         if (reversing) { motorIn = SetMotor(-speedLimit, carMovement.currentSpeed); }
         else
