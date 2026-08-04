@@ -473,7 +473,8 @@ public class CarControlAI : MonoBehaviour
         {
             targetWaypointRandomPos.position = upcomingWaypoints[1].pathingNode.position;
             targetWaypointRandomPos.position += (upcomingWaypoints[1].offsetDist * upcomingWaypoints[1].baseT.right *
-                ((waypointOffsetMult + 2*(1 - aiSkill)) / 3f)); //Average of randomness due to racer count, and randomness due to AI skill. The latter is weighted twice as much.
+                //((waypointOffsetMult + 2*(1 - aiSkill)) / 3f)); //Average of randomness due to racer count, and randomness due to AI skill. The latter is weighted twice as much.
+                Mathf.Max(waypointOffsetMult, 1 - aiSkill));
             targetWaypointRandomPos.rotation = upcomingWaypoints[1].pathingNode.rotation;
             closeToNextWaypoint = true;
         }
@@ -481,7 +482,8 @@ public class CarControlAI : MonoBehaviour
         {
             targetWaypointRandomPos.position = upcomingWaypoints[0].pathingNode.position;
             targetWaypointRandomPos.position += (upcomingWaypoints[0].offsetDist * upcomingWaypoints[0].baseT.right *
-                ((waypointOffsetMult + 2*(1 - aiSkill)) / 3f));
+                //((waypointOffsetMult + 2*(1 - aiSkill)) / 3f));
+                Mathf.Max(waypointOffsetMult, 1 - aiSkill));
             targetWaypointRandomPos.rotation = upcomingWaypoints[0].pathingNode.rotation;
             closeToNextWaypoint = false;
         }
@@ -521,7 +523,7 @@ public class CarControlAI : MonoBehaviour
         //    );
 
         //ACCELERATION
-        steeringArc.turnSpeed = CalculateTurningSpeed(steeringArc.turnRadius, upcomingWaypoints[0].script.aiTurnSpeedMult * Mathf.Lerp(1, lowSkillTurnSpeedMult, aiSkill));
+        steeringArc.turnSpeed = CalculateTurningSpeed(steeringArc.turnRadius, upcomingWaypoints[0].script.aiTurnSpeedMult * Mathf.Lerp(lowSkillTurnSpeedMult, 1, aiSkill));
 
         if (reversing) { motorIn = SetMotor(-speedLimit, carMovement.currentSpeed); }
         else

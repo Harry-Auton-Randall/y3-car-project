@@ -412,3 +412,4 @@ MonoBehaviour:
   firstLapWaypoint: {fileID: 0}
   lapWaypointValue: 0
   nextLapWaypoint: {fileID: 0}
+  aiTurnSpeedMult: 1
