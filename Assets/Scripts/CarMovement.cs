@@ -33,7 +33,7 @@ public class CarMovement : MonoBehaviour
     public float maxSpeedReverse = 15.0f;
 
     Collider currentWaypoint;
-    Collider[] nextWaypoints;
+    public Collider[] nextWaypoints;
     Vector3 resetPosition = new Vector3(0, 3, 0);
     Quaternion resetRotation = Quaternion.identity;
     int waypointLayer;
@@ -195,7 +195,7 @@ public class CarMovement : MonoBehaviour
         //If AI-controlled, sends info update to CarControlAI
         if (!isPlayer)
         {
-            GetComponent<CarControlAI>().UpdateWaypoint(this.currentWaypoint, this.nextWaypoints);
+            GetComponent<CarControlAI>().UpdateWaypoint(this.currentWaypoint);
         }
     }
 
@@ -314,6 +314,13 @@ public class CarMovement : MonoBehaviour
             carCollisions -= 1;
         }
     }
+    //void OnTriggerStay(Collider collision)
+    //{
+    //    if (collision.gameObject.layer == waypointLayer && isPlayer)
+    //    {
+    //        collision.GetComponent<Waypoint>().UpdateRoute(this.transform.position, rb.linearVelocity);
+    //    }
+    //}
 
     
     public void EnableRaceStarted()
