@@ -76,71 +76,36 @@ public class CarControlAI : MonoBehaviour
 
     CarMovement carMovement;
     Rigidbody rb;
-    float timeStill;
 
     float motorIn;
     float steerIn;
 
-    Vector3 waypointDirection;
-    float waypointAngle;
-
-    //stuff for AI steering version 2
-    //Vector3 waypointDirectionGlobal;
-    //Transform waypointDirectionTransform;
-    //Vector3 waypointDirectionToCarPosition;
-    //float waypointDirectionToCarRadius;
-    //float waypointDirectionToCarAngle;
-    //Quaternion steeringTargetRot;
-    //float steeringTargetRotY;
-
-    float maxSteering;
-    float targetSpeed;
-    float targetSpeedFraction;
-
-    float speedLimit = 999;
-
-    Collider[] nextWaypoints;
-    Transform[] targetWaypoints;
-
-    Transform targetWaypointRandomPos;
-    float targetWaypointOffset = 0;
-    public float waypointOffsetMult = 1f;
-    bool waypointAimStraight;
+    List<UpcomingWaypointInfo> upcomingWaypoints = new List<UpcomingWaypointInfo>();
+    UpcomingWaypointInfo steeringArc;
+    public int waypointsAhead = 4;
 
     Quaternion carRotRelativeToWaypoint;
     float carRotRelativeToWaypointY;
     Transform frontWheelMidpoint;
     Vector3 frontWheelMidpointDefaultPos;
 
-    List<UpcomingWaypointInfo> upcomingWaypoints = new List<UpcomingWaypointInfo>();
-    UpcomingWaypointInfo steeringArc;
-
-    Vector3[] waypointTurningEnds;
-    float[] waypointTurningRadii;
-    float[] waypointTurningSpeeds;
-    float[] waypointTurningAngles;
-    float[] waypointTurningDists;
-
-    float carTurningRadius;
-    float carTurningSpeed;
-    float carTurningAngle;
-    float carTurningDist;
-
+    float maxSteering;
+    float targetSpeed;
+    float speedLimit = 999;
     float turningDistTotal;
     public float brakingSpeed;
 
-    public int waypointsAhead = 4;
-
-    bool reversing = false;
+    Transform targetWaypointRandomPos;
+    public float waypointOffsetMult = 1f;
 
     Ray[] frontBackRays = new Ray[6];
+    Ray waypointRotationRay;
     LayerMask waypointMask;
     RaycastHit rayHit;
     float frontRayDist = 2.3f;
 
-    Ray waypointRotationRay;
-    Vector3 waypointToCarPosition;
-    float waypointToCarAngle;
+    bool reversing = false;
+    float timeStill;
 
     void Awake()
     {
@@ -166,7 +131,7 @@ public class CarControlAI : MonoBehaviour
         }
     }
 
-    public void UpdateWaypoint(Collider newCurrentWaypoint, Collider[] nextWaypointsIn)
+    public void UpdateWaypoint(Collider newCurrentWaypoint)
     {
         UpcomingWaypointInfo tempUWI;
 
@@ -206,192 +171,37 @@ public class CarControlAI : MonoBehaviour
             upcomingWaypoints[uWIndex + 1] = tempUWI;
         }
         //Adds all the turnSpeeds
-        
         for (int i = 1; i < upcomingWaypoints.Count;i++)
         {
             tempUWI = upcomingWaypoints[i];
             tempUWI.SetTurnSpeed(CalculateTurningSpeed(tempUWI.turnRadius, tempUWI.script.aiTurnSpeedMult * Mathf.Lerp(lowSkillTurnSpeedMult, 1, aiSkill)));
-            //tempUWI.SetOffsetDist(upcomingWaypoints[i - 1].offsetDist);
             upcomingWaypoints[i] = tempUWI;
         }
 
         //Remove the 0th entry, because its the waypoint that was just passed and doesn't need to be targeted
         upcomingWaypoints.RemoveAt(0);
-
-        ////targetWaypointOffset is measured in metres
-        ////Can change by 1m per 6m of waypoint distance
-        //float waypointMaxOffsetDistLeft = targetWaypointOffset - (upcomingWaypoints[0].turnDist / 10f);
-        //float waypointMaxOffsetDistRight = targetWaypointOffset + (upcomingWaypoints[0].turnDist / 10f);
-        //targetWaypointOffset = Random.Range(
-        //    Mathf.Max(-1 * upcomingWaypoints[0].script.offsetLimitLeft, waypointMaxOffsetDistLeft),
-        //    Mathf.Min(upcomingWaypoints[0].script.offsetLimitRight, waypointMaxOffsetDistRight)
-        //);
-
-        return;
-
-        if (nextWaypoints == null)
-        {
-            RecalcWaypoints(nextWaypointsIn);
-        }
-        else if (newCurrentWaypoint.transform != targetWaypoints[0]) //incorrect waypoint hit
-        {
-            RecalcWaypoints(nextWaypointsIn);
-        }
-        else //correct waypoint hit
-        {
-            nextWaypoints = nextWaypointsIn;
-            for (int i=0;i<waypointsAhead - 1; i++)
-            {
-                targetWaypoints[i] = targetWaypoints[i+1];
-            }
-            targetWaypoints[waypointsAhead - 1] = FindNextWaypoint
-                (targetWaypoints[waypointsAhead - 2].GetComponent<Waypoint>().nextWaypoints);
-
-            if (waypointsAhead > 2)
-            {
-                for (int i=0; i<waypointsAhead - 2; i++)
-                {
-                    waypointTurningEnds[i] = waypointTurningEnds[i + 1];
-                    waypointTurningRadii[i] = waypointTurningRadii[i + 1];
-                    waypointTurningSpeeds[i] = waypointTurningSpeeds[i + 1];
-                    waypointTurningAngles[i] = waypointTurningAngles[i + 1];
-                    waypointTurningDists[i] = waypointTurningDists[i + 1];
-                }
-            }
-
-            waypointTurningEnds[waypointsAhead - 2] = CalculateTurningEnd
-                (targetWaypoints[waypointsAhead - 2], targetWaypoints[waypointsAhead - 1]);
-
-            waypointTurningRadii[waypointsAhead - 2] = CalculateTurningRadius
-                (waypointTurningEnds[waypointsAhead - 2]);
-
-            waypointTurningSpeeds[waypointsAhead - 2] = CalculateTurningSpeed
-                (waypointTurningRadii[waypointsAhead - 2], 1);
-
-            waypointTurningAngles[waypointsAhead - 2] = CalculateTurningAngle
-                (waypointTurningEnds[waypointsAhead - 2], waypointTurningRadii[waypointsAhead - 2]);
-
-            if (waypointTurningAngles[waypointsAhead - 2] == 0)
-            {
-                waypointTurningDists[waypointsAhead - 2] = waypointTurningEnds[waypointsAhead - 2].z;
-            }
-            else
-            {
-                waypointTurningDists[waypointsAhead - 2] = CalculateTurningCircumference
-                    (waypointTurningAngles[waypointsAhead - 2], waypointTurningRadii[waypointsAhead - 2]);
-            }
-        }
-
-        targetWaypointOffset = Random.Range(
-            -(targetWaypoints[0].GetComponent<Waypoint>().offsetLimitLeft),
-            targetWaypoints[0].GetComponent<Waypoint>().offsetLimitRight);
-
-        waypointAimStraight = targetWaypoints[0].GetComponent<Waypoint>().aimStraight;
     }
 
-    void RecalcWaypoints(Collider[] nextWaypointsIn2)
-    {
-        //initialises targetWaypoints, for start of race
-        targetWaypoints = new Transform[waypointsAhead];
-
-        waypointTurningEnds = new Vector3[waypointsAhead - 1];
-        waypointTurningRadii = new float[waypointsAhead - 1];
-        waypointTurningSpeeds = new float[waypointsAhead - 1];
-        waypointTurningAngles = new float[waypointsAhead - 1];
-        waypointTurningDists = new float[waypointsAhead - 1];
-
-        nextWaypoints = nextWaypointsIn2;
-        targetWaypoints[0] = FindNextWaypoint(nextWaypoints);
-        for (int i=1; i<waypointsAhead;i++)
-        {
-            targetWaypoints[i] = FindNextWaypoint
-                (targetWaypoints[i - 1].GetComponent<Waypoint>().nextWaypoints);
-        }
-
-        for (int i=0; i<waypointsAhead - 1; i++)
-        {
-            waypointTurningEnds[i] = CalculateTurningEnd
-                (targetWaypoints[i], targetWaypoints[i + 1]);
-
-            waypointTurningRadii[i] = CalculateTurningRadius(waypointTurningEnds[i]);
-
-            waypointTurningSpeeds[i] = CalculateTurningSpeed(waypointTurningRadii[i], 1);
-
-            waypointTurningAngles[i] = CalculateTurningAngle
-                (waypointTurningEnds[i], waypointTurningRadii[i]);
-
-            if (waypointTurningAngles[i] == 0)
-            {
-                waypointTurningDists[i] = waypointTurningEnds[i].z;
-            }
-            else
-            {
-                waypointTurningDists[i] = CalculateTurningCircumference
-                    (waypointTurningAngles[i], waypointTurningRadii[i]);
-            }
-        }
-    }
 
     static Transform FindNextWaypoint(Collider[] nextWaypoints)
     {
         return (nextWaypoints.Length == 1) ? nextWaypoints[0].transform
             : nextWaypoints[Random.Range(0, nextWaypoints.Length)].transform;
-        //if (nextWaypoints.Length == 1)
-        //{
-        //    return nextWaypoints[0].transform;
-        //}
-        //else
-        //{
-        //    return nextWaypoints[Random.Range(0, nextWaypoints.Length)].transform;
-        //}
-    }
-
-    public static Vector3 CalculateTurningEnd(Transform startPos, Transform endPos)
-    {
-        return startPos.InverseTransformPoint(endPos.position);
-    }
-
-    public static float CalculateTurningRadius(Vector3 localEndPos)
-    {
-        return Mathf.Abs(
-            (Mathf.Pow(localEndPos.x, 2) + Mathf.Pow(localEndPos.z, 2))
-            / (2 * localEndPos.x));
-    }
-
-    public static float CalculateTurningSpeed(float turnRadius, float mult)
-    {
-        return mult * (2.95258f * Mathf.Pow(turnRadius, 0.542118f));
-    }
-
-    public static float CalculateTurningAngle(Vector3 localEndPos, float turnRadius)
-    {
-        if (turnRadius == Mathf.Infinity)
-        {
-            return 0f;
-        }
-        else
-        {
-            //Finds start and end positions relative to the turning centre
-            localEndPos.x = Mathf.Abs(localEndPos.x);
-            localEndPos.x -= turnRadius;
-            localEndPos.y = 0;
-
-            float tempAngle = Vector3.SignedAngle(-Vector3.right, localEndPos, Vector3.up);
-            if (tempAngle < 0f)
-            {
-                tempAngle += 360f;
-            }
-            return tempAngle;
-        }
-    }
-
-    public static float CalculateTurningCircumference(float turnAngle, float turnRadius)
-    {
-        return (Mathf.PI * 2 * turnRadius * (turnAngle / 360f));
     }
 
     void Update()
     {
+
+        if (upcomingWaypoints == null || upcomingWaypoints.Count == 0)
+        {
+            motorIn = SetMotor(0, carMovement.currentSpeed);
+            steerIn = 0;
+
+            carMovement.SetMotorIn(motorIn);
+            carMovement.SetSteerIn(steerIn);
+            return;
+        }
+
         //Draw rays
         frontBackRays[0] = new Ray(transform.position + (transform.right * -0.89f), transform.forward);
         frontBackRays[1] = new Ray(transform.position, transform.forward);
@@ -454,12 +264,7 @@ public class CarControlAI : MonoBehaviour
 
         //BEGINNING OF NEW STUFF
 
-        if (upcomingWaypoints == null || upcomingWaypoints.Count == 0)
-        {
-            motorIn = SetMotor(0, carMovement.currentSpeed);
-            steerIn = 0;
-            return;
-        }
+
         //Updates first upcomingWaypoint entry with the car's stuff
         UpcomingWaypointInfo tempUWI = upcomingWaypoints[0];
         tempUWI.UpdateInfo(this.transform);
@@ -514,14 +319,6 @@ public class CarControlAI : MonoBehaviour
 
         Waypoint.DebugArc.Draw(steeringArc.baseT.position, frontWheelMidpoint.position, steeringArc.baseT.forward * -1);
 
-
-        //waypointDirection = transform.InverseTransformPoint(upcomingWaypoints[0].pathingNode.position);
-        //waypointDirection.y = 0;
-        //steerIn = SetSteering(
-        //    Vector3.SignedAngle(Vector3.forward, waypointDirection, Vector3.up), 
-        //    carMovement.steerRange * carMovement.steerRangeFraction
-        //    );
-
         //ACCELERATION
         steeringArc.turnSpeed = CalculateTurningSpeed(steeringArc.turnRadius, upcomingWaypoints[0].script.aiTurnSpeedMult * Mathf.Lerp(lowSkillTurnSpeedMult, 1, aiSkill));
 
@@ -554,216 +351,6 @@ public class CarControlAI : MonoBehaviour
 
         carMovement.SetMotorIn(motorIn);
         carMovement.SetSteerIn(steerIn);
-
-        return;
-
-
-        //targetWaypointRandomPos is set to the transform of the targetWaypoint,
-        // + some random deviation on its x axis
-        targetWaypointRandomPos.position = targetWaypoints[0].position
-            + (targetWaypoints[0].right * targetWaypointOffset * waypointOffsetMult);
-        targetWaypointRandomPos.rotation = targetWaypoints[0].rotation;
-
-        //Find the car's position/angle relative to the next waypoint
-        waypointToCarPosition = targetWaypointRandomPos
-            .InverseTransformPoint(transform.position);
-        waypointToCarPosition.y = 0;
-        waypointToCarAngle = Vector3.Angle(Vector3.forward * -1, waypointToCarPosition);
-
-        //get the angle between the car's rotation and waypointDirection
-        //waypointDirection is either its position or the direction its facing
-        if (Physics.Raycast(waypointRotationRay, out rayHit, Mathf.Infinity, waypointMask)
-            && rayHit.transform == targetWaypoints[0] && waypointToCarAngle > 30)
-        {
-            waypointDirection = transform.InverseTransformPoint(rayHit.point);
-        }
-        else
-        {
-            waypointDirection = transform.InverseTransformPoint
-                (targetWaypointRandomPos.position);
-        }
-        //waypointDirectionGlobal = transform.TransformPoint(waypointDirection);
-        waypointDirection.y = 0;
-        waypointAngle = Vector3.SignedAngle(Vector3.forward, waypointDirection, Vector3.up);
-
-        //Calculate the car's turning values - waypointDirection is the turningEnd
-        carTurningRadius = CalculateTurningRadius(waypointDirection);
-        carTurningSpeed = CalculateTurningSpeed(carTurningRadius, 1);
-        carTurningAngle = CalculateTurningAngle(waypointDirection, carTurningRadius);
-        if (carTurningAngle == 0)
-        {
-            carTurningDist = waypointDirection.z;
-        }
-        else
-        {
-            carTurningDist = CalculateTurningCircumference
-                (carTurningAngle, carTurningRadius);
-        }
-
-        //change car inputs depending on waypointAngle
-        //Steering
-
-        maxSteering = carMovement.steerRange * carMovement.steerRangeFraction;
-        // VERSION 1
-        //Attempt to follow a more natural curve towards target waypoint
-        if (carTurningAngle <= 10 && !reversing && !waypointAimStraight &&
-            (Mathf.Abs(targetWaypoints[0].transform.eulerAngles.y - this.transform.eulerAngles.y) > 3))
-        {
-            steerIn = ((Mathf.Atan(2.4f / carTurningRadius)) * Mathf.Rad2Deg) / maxSteering;
-            steerIn = Mathf.Clamp(steerIn, -1f, 1f);
-            if (waypointAngle < 0)
-            {
-                steerIn *= -1;
-            }
-        }
-        //Aim directly at target waypoint
-        else if (waypointAngle > maxSteering)
-        {
-            steerIn = 1;
-        }
-        else if (waypointAngle < maxSteering * -1)
-        {
-            steerIn = -1;
-        }
-        else
-        {
-            steerIn = waypointAngle / maxSteering;
-            reversing = false;
-        }
-        //Invert steering if going backwards
-        if (carMovement.currentSpeed < 0)
-        {
-            steerIn *= -1;
-        }
-
-        // VERSION 2
-        ////figure out the turning angle from the targetWaypoint to the car
-        //waypointDirectionTransform.position = waypointDirectionGlobal;
-        //waypointDirectionTransform.rotation = targetWaypoints[0].rotation;
-        //waypointDirectionToCarPosition = CalculateTurningEnd(waypointDirectionTransform, this.transform) * -1;
-        //waypointDirectionToCarRadius = CalculateTurningRadius(waypointDirectionToCarPosition);
-        //waypointDirectionToCarAngle = CalculateTurningAngle(waypointDirectionToCarPosition, waypointDirectionToCarRadius);
-        ////figures out if its a left or right turn
-        //if (waypointDirectionTransform.InverseTransformPoint(this.transform.position).x > 0)
-        //{
-        //    waypointDirectionToCarAngle *= -1;
-        //}
-
-        ////finds the global rotation that the car should be aiming for, relative to the car itself
-        //steeringTargetRot = targetWaypoints[0].rotation;
-        //steeringTargetRot *= Quaternion.AngleAxis(waypointDirectionToCarAngle, Vector3.up); //rotates around local Y axis
-        //steeringTargetRot *= Quaternion.Inverse(transform.rotation); //makes it relative to the car
-        //steeringTargetRotY = steeringTargetRot.eulerAngles.y;
-        //if (steeringTargetRotY > 180)
-        //{
-        //    steeringTargetRotY -= 360;
-        //}
-
-        ////actual steering
-        ////Ignores steering and goes straight if 1. steeringTargetRotY and waypointAngle are on opposite sides and 2. the car's aiming at the targetWaypoint
-        //if (!
-        //    ((Physics.Raycast(waypointRotationRay, out rayHit, Mathf.Infinity, waypointMask) && rayHit.transform == targetWaypoints[0])
-        //    && (waypointAngle * steeringTargetRotY < 0)))
-        //{
-        //    if (steeringTargetRotY >= maxSteering)
-        //    {
-        //        steerIn = 1;
-        //    }
-        //    else if (steeringTargetRotY <= maxSteering * -1)
-        //    {
-        //        steerIn = -1;
-        //    }
-        //    else
-        //    {
-        //        steerIn = steeringTargetRotY / maxSteering;
-        //        reversing = false;
-        //    }
-        //}
-        //else
-        //{
-        //    steerIn = 0;
-        //}
-        ////Invert steering if going backwards
-        //if (carMovement.currentSpeed < 0)
-        //{
-        //    steerIn *= -1;
-        //}
-
-        //If reversing, override all speed calculations and set motorIn to -1
-        if (reversing)
-        {
-            motorIn = -1;
-        }
-        else
-        {
-            //Motor - first sets targetSpeed, then accelerates/brakes if its below/above that speed
-            if (Mathf.Abs(waypointAngle) <= 15f)
-            {
-                targetSpeed = carMovement.maxSpeed;
-            }
-            else if (Mathf.Abs(waypointAngle) > 90f)
-            {
-                targetSpeed = carMovement.maxSpeed * 0.1f;
-            }
-            else
-            {
-                targetSpeedFraction = ((-0.9f / 75f) * Mathf.Abs(waypointAngle)) + 1.18f;
-                targetSpeed = targetSpeedFraction * carMovement.maxSpeed;
-            }
-
-            //Calculates how fast the car would be at each waypoint if it started braking now
-            //Checks against each waypoint's turningSpeed, changes targetSpeed if going too fast
-            turningDistTotal = carTurningDist;
-            if (Mathf.Pow(waypointTurningSpeeds[0], 2) <
-                Mathf.Pow(carMovement.currentSpeed, 2) - (2 * brakingSpeed * turningDistTotal))
-            {
-                if (waypointTurningSpeeds[0] < targetSpeed)
-                {
-                    targetSpeed = waypointTurningSpeeds[0];
-                }
-            }
-            if (waypointsAhead > 2)
-            {
-                for (int i = 0; i < waypointsAhead - 2; i++)
-                {
-                    turningDistTotal += waypointTurningDists[i];
-                    if (Mathf.Pow(waypointTurningSpeeds[i + 1], 2) <
-                        Mathf.Pow(carMovement.currentSpeed, 2) - (2 * brakingSpeed * turningDistTotal))
-                    {
-                        if (waypointTurningSpeeds[i + 1] < targetSpeed)
-                        {
-                            targetSpeed = waypointTurningSpeeds[i + 1];
-                        }
-                    }
-                }
-            }
-
-            //Also checks targetSpeed against carTurningSpeed,
-            //so the car doesn't speed up halfway through a corner
-            if (targetSpeed > carTurningSpeed)
-            {
-                targetSpeed = carTurningSpeed;
-            }
-
-            //Also prevents the car from going too slow
-            if (targetSpeed < carMovement.maxSpeed * 0.1f)
-            {
-                targetSpeed = carMovement.maxSpeed * 0.1f;
-            }
-
-
-            if (carMovement.currentSpeed <= targetSpeed)
-            {
-                motorIn = 1;
-            }
-            else
-            {
-                motorIn = -1;
-            }
-        }
-
-        carMovement.SetMotorIn(motorIn);
-        carMovement.SetSteerIn(steerIn);
     }
 
     static float GetFinalVelocity(float u, float a, float s)
@@ -777,19 +364,6 @@ public class CarControlAI : MonoBehaviour
         return (desiredAngle > maxAngle) ? 1 :
                (desiredAngle < -maxAngle) ? -1 :
                (desiredAngle / maxAngle);
-
-        //if (desiredAngle > maxAngle)
-        //{
-        //    return 1;
-        //}
-        //else if (desiredAngle < maxAngle * -1)
-        //{
-        //    return -1;
-        //}
-        //else
-        //{
-        //    return desiredAngle / maxAngle;
-        //}
     }
 
     static float SetMotor(float desiredSpeed, float currentSpeed)
@@ -800,5 +374,46 @@ public class CarControlAI : MonoBehaviour
         return (currentRelativeToDesired > proportional) ? -1 :
                (currentRelativeToDesired < -proportional) ? 1 :
                -(currentRelativeToDesired / proportional);
+    }
+
+
+    public static Vector3 CalculateTurningEnd(Transform startPos, Transform endPos)
+    {
+        return startPos.InverseTransformPoint(endPos.position);
+    }
+    public static float CalculateTurningRadius(Vector3 localEndPos)
+    {
+        return Mathf.Abs(
+            (Mathf.Pow(localEndPos.x, 2) + Mathf.Pow(localEndPos.z, 2))
+            / (2 * localEndPos.x));
+    }
+    public static float CalculateTurningSpeed(float turnRadius, float mult)
+    {
+        return mult * (2.95258f * Mathf.Pow(turnRadius, 0.542118f));
+    }
+    public static float CalculateTurningAngle(Vector3 localEndPos, float turnRadius)
+    {
+        if (turnRadius == Mathf.Infinity)
+        {
+            return 0f;
+        }
+        else
+        {
+            //Finds start and end positions relative to the turning centre
+            localEndPos.x = Mathf.Abs(localEndPos.x);
+            localEndPos.x -= turnRadius;
+            localEndPos.y = 0;
+
+            float tempAngle = Vector3.SignedAngle(-Vector3.right, localEndPos, Vector3.up);
+            if (tempAngle < 0f)
+            {
+                tempAngle += 360f;
+            }
+            return tempAngle;
+        }
+    }
+    public static float CalculateTurningCircumference(float turnAngle, float turnRadius)
+    {
+        return (Mathf.PI * 2 * turnRadius * (turnAngle / 360f));
     }
 }
