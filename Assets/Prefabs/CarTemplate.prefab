@@ -43,8 +43,8 @@ WheelCollider:
   m_Center: {x: 0, y: 0, z: 0}
   m_Radius: 0.35
   m_SuspensionSpring:
-    spring: 35000
-    damper: 4500
+    spring: 70000
+    damper: 9000
     targetPosition: 0.5
   m_SuspensionDistance: 0.15
   m_ForceAppPointDistance: 0
@@ -145,8 +145,8 @@ WheelCollider:
   m_Center: {x: 0, y: 0, z: 0}
   m_Radius: 0.35
   m_SuspensionSpring:
-    spring: 35000
-    damper: 4500
+    spring: 70000
+    damper: 9000
     targetPosition: 0.5
   m_SuspensionDistance: 0.15
   m_ForceAppPointDistance: 0
@@ -345,8 +345,8 @@ WheelCollider:
   m_Center: {x: 0, y: 0, z: 0}
   m_Radius: 0.35
   m_SuspensionSpring:
-    spring: 35000
-    damper: 4500
+    spring: 70000
+    damper: 9000
     targetPosition: 0.5
   m_SuspensionDistance: 0.15
   m_ForceAppPointDistance: 0
@@ -516,8 +516,8 @@ WheelCollider:
   m_Center: {x: 0, y: 0, z: 0}
   m_Radius: 0.35
   m_SuspensionSpring:
-    spring: 35000
-    damper: 4500
+    spring: 70000
+    damper: 9000
     targetPosition: 0.5
   m_SuspensionDistance: 0.15
   m_ForceAppPointDistance: 0
@@ -633,21 +633,33 @@ MonoBehaviour:
   steerSpeedMax: 10
   steerSpeedMin: 2
   newSteerFalloff: 0
-  newBraking: 1
   newSuspension: 1
   newSuspensionMult: 2
-  torqueMotor: 1000
-  torqueBrake: 1000
   steerRange: 30
   steerRangeMin: 0.3
   isPlayer: 0
-  maxSpeed: 90
-  maxSpeedReverse: 15
   nextWaypoints: []
   motorIn: 0
   steerIn: 0
   currentSpeed: 0
   steerRangeFraction: 0
+  wheelInfos:
+  - wheelEnd: 0
+    wheelCollider: {fileID: 7369945159669932042}
+    wheelModel: {fileID: 127592729143310490}
+    brakeModel: {fileID: 8516227830628670266}
+  - wheelEnd: 0
+    wheelCollider: {fileID: 6608090417052232539}
+    wheelModel: {fileID: 8770075631457275571}
+    brakeModel: {fileID: 1035658229335108883}
+  - wheelEnd: 1
+    wheelCollider: {fileID: 6925739578596097882}
+    wheelModel: {fileID: 3098314338114135207}
+    brakeModel: {fileID: 6707434928237332231}
+  - wheelEnd: 1
+    wheelCollider: {fileID: 5589835038376746533}
+    wheelModel: {fileID: 7747327295202379462}
+    brakeModel: {fileID: 2048854013433177446}
   respawnTimeTotal: 3
   lapPub: 0
   lapWaypointPub: 0
@@ -844,6 +856,11 @@ PrefabInstance:
 --- !u!4 &127592729143310490 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: cb7af3ba8a7a47d45aecf99cc633d349, type: 3}
+  m_PrefabInstance: {fileID: 454852104435998577}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &8516227830628670266 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -1125814679913511861, guid: cb7af3ba8a7a47d45aecf99cc633d349, type: 3}
   m_PrefabInstance: {fileID: 454852104435998577}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2880758420023218231
@@ -1098,6 +1115,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: cb7af3ba8a7a47d45aecf99cc633d349, type: 3}
   m_PrefabInstance: {fileID: 3275758521088967500}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &6707434928237332231 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -1125814679913511861, guid: cb7af3ba8a7a47d45aecf99cc633d349, type: 3}
+  m_PrefabInstance: {fileID: 3275758521088967500}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7786354722528862509
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1179,6 +1201,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: cb7af3ba8a7a47d45aecf99cc633d349, type: 3}
+--- !u!4 &2048854013433177446 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -1125814679913511861, guid: cb7af3ba8a7a47d45aecf99cc633d349, type: 3}
+  m_PrefabInstance: {fileID: 7786354722528862509}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &7747327295202379462 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: cb7af3ba8a7a47d45aecf99cc633d349, type: 3}
@@ -1265,6 +1292,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: cb7af3ba8a7a47d45aecf99cc633d349, type: 3}
+--- !u!4 &1035658229335108883 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -1125814679913511861, guid: cb7af3ba8a7a47d45aecf99cc633d349, type: 3}
+  m_PrefabInstance: {fileID: 9097033956065241432}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &8770075631457275571 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: cb7af3ba8a7a47d45aecf99cc633d349, type: 3}

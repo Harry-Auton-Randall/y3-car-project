@@ -1,7 +1,39 @@
 using UnityEngine;
+using System.Linq;
+
+[System.Serializable] public struct WheelInfo
+{
+    public CarMovement.WheelEnd wheelEnd;
+    public WheelCollider wheelCollider;
+    public Transform wheelModel, brakeModel;
+
+    public WheelInfo(CarMovement.WheelEnd wheelEndIn, WheelCollider wheelColliderIn, Transform wheelModelIn, Transform brakeModelIn)
+    {
+        wheelEnd = wheelEndIn;
+        wheelCollider = wheelColliderIn;
+        wheelModel = wheelModelIn;
+        brakeModel = brakeModelIn;
+    }
+}
 
 public class CarMovement : MonoBehaviour
 {
+    public enum WheelDrive { Front, Rear, All};
+    public enum WheelEnd { Front, Rear, None };
+    public static bool IsWheelDriven(WheelEnd wheelRow, WheelDrive wheelDrive)
+    {
+        switch (wheelRow)
+        {
+            default:
+            case WheelEnd.None:
+                return false;
+            case WheelEnd.Front:
+                return wheelDrive == WheelDrive.Front || wheelDrive == WheelDrive.All;
+            case WheelEnd.Rear:
+                return wheelDrive == WheelDrive.Rear || wheelDrive == WheelDrive.All;
+        }
+    }
+
     //NEW HANDLING STUFF
 
     //Gradual steering
@@ -15,22 +47,30 @@ public class CarMovement : MonoBehaviour
     public bool newSteerFalloff = true;
 
     //New braking
-    public bool newBraking = true;
+    //public bool newBraking = true;
 
     //New suspension
     public bool newSuspension = true;
     public float newSuspensionMult = 2;
 
     //Car stats
-    public float torqueMotor = 1000.0f;
-    public float torqueBrake = 1000.0f;
+    float torqueMotor;
+    float torqueMotorTotal = 4000f;
+    WheelDrive motorWheelDrive = WheelDrive.All;
+    float torqueBrake;
+    float torqueBrakeTotal = 6000f;
+    WheelDrive brakeWheelDrive = WheelDrive.All;
+
     public float steerRange = 30.0f;
     public float steerRangeMin = 0.3f;
 
     public bool isPlayer;
 
-    public float maxSpeed = 90.0f;
-    public float maxSpeedReverse = 15.0f;
+    float maxSpeed = 90.0f;
+    float maxSpeedReverse = 15.0f;
+    float linearDamping;
+
+    bool boostOverheat;
 
     Collider currentWaypoint;
     public Collider[] nextWaypoints;
@@ -52,6 +92,7 @@ public class CarMovement : MonoBehaviour
     WheelCollider[] wheelColliders;
     Transform[] wheelModels;
     Transform[] wheelBrakeModels;
+    public WheelInfo[] wheelInfos;
 
     //For the wheels
     Vector3 wheelPos;
@@ -105,10 +146,10 @@ public class CarMovement : MonoBehaviour
             steerRangeMin = 0.05f;
         }
 
-        if (newBraking)
-        {
-            torqueBrake = 1500f;
-        }
+        //if (newBraking)
+        //{
+        //    torqueBrake = 1500f;
+        //}
 
 
         rb = GetComponent<Rigidbody>();
@@ -122,17 +163,17 @@ public class CarMovement : MonoBehaviour
         wheelColliders[2] = transform.Find("WheelBackLeftCollider").GetComponent<WheelCollider>();
         wheelColliders[3] = transform.Find("WheelBackRightCollider").GetComponent<WheelCollider>();
 
-        if (newSuspension)
-        {
-            JointSpring tempSpring;
-            for (int i=0;i<wheelColliders.Length;i++)
-            {
-                tempSpring = wheelColliders[i].suspensionSpring;
-                tempSpring.spring *= newSuspensionMult;
-                tempSpring.damper *= newSuspensionMult;
-                wheelColliders[i].suspensionSpring = tempSpring;
-            }
-        }
+        //if (newSuspension)
+        //{
+        //    JointSpring tempSpring;
+        //    for (int i=0;i<wheelColliders.Length;i++)
+        //    {
+        //        tempSpring = wheelColliders[i].suspensionSpring;
+        //        tempSpring.spring *= newSuspensionMult;
+        //        tempSpring.damper *= newSuspensionMult;
+        //        wheelColliders[i].suspensionSpring = tempSpring;
+        //    }
+        //}
 
         wheelModels = new Transform[4];
         wheelModels[0] = transform.Find("WheelFrontLeft");
@@ -145,6 +186,14 @@ public class CarMovement : MonoBehaviour
         {
             wheelBrakeModels[i] = wheelModels[i].Find("brake");
         }
+
+
+        int motorDrivenWheelsCount = wheelInfos.Count(x => IsWheelDriven(x.wheelEnd, motorWheelDrive));
+        int brakeDrivenWheelsCount = wheelInfos.Count(x => IsWheelDriven(x.wheelEnd, brakeWheelDrive));
+        torqueMotor = torqueMotorTotal / motorDrivenWheelsCount;
+        torqueBrake = torqueBrakeTotal / brakeDrivenWheelsCount;
+
+        linearDamping = (torqueMotorTotal / wheelInfos[0].wheelCollider.radius) / (maxSpeed * maxSpeed);
 
         waypointLayer = LayerMask.NameToLayer("Waypoint");
         carMask = (1 << LayerMask.NameToLayer("Car"));
@@ -410,20 +459,39 @@ public class CarMovement : MonoBehaviour
         //If true, cause braking instead of accelerating
         if (raceStarted)
         {
-            if (Mathf.Sign(motorIn) != Mathf.Sign(currentSpeed) && currentSpeed != 0f && motorIn != 0f)
+            //if (Mathf.Sign(motorIn) != Mathf.Sign(currentSpeed) && currentSpeed != 0f && motorIn != 0f)
+            //{
+            //    for (int i = 0; i < wheelColliders.Length; i++)
+            //    {
+            //        wheelColliders[i].motorTorque = 0f;
+            //        wheelColliders[i].brakeTorque = Mathf.Abs(motorIn * torqueBrake);
+            //    }
+            //}
+            //else
+            //{
+            //    for (int i = 0; i < wheelColliders.Length; i++)
+            //    {
+            //        wheelColliders[i].motorTorque = motorIn * torqueMotor * currentSpeedFraction;
+            //        wheelColliders[i].brakeTorque = 0f;
+            //    }
+            //}
+            for (int i=0;i<wheelInfos.Length;i++)
             {
-                for (int i = 0; i < wheelColliders.Length; i++)
+                wheelInfos[i].wheelCollider.motorTorque = 0f;
+                wheelInfos[i].wheelCollider.brakeTorque = 0f;
+                if (Mathf.Sign(motorIn) != Mathf.Sign(currentSpeed) && currentSpeed != 0f && motorIn != 0f)
                 {
-                    wheelColliders[i].motorTorque = 0f;
-                    wheelColliders[i].brakeTorque = Mathf.Abs(motorIn * torqueBrake);
+                    if (IsWheelDriven(wheelInfos[i].wheelEnd, brakeWheelDrive))
+                    {
+                        wheelInfos[i].wheelCollider.brakeTorque = Mathf.Abs(motorIn * torqueBrake);
+                    }
                 }
-            }
-            else
-            {
-                for (int i = 0; i < wheelColliders.Length; i++)
+                else
                 {
-                    wheelColliders[i].motorTorque = motorIn * torqueMotor * currentSpeedFraction;
-                    wheelColliders[i].brakeTorque = 0f;
+                    if (IsWheelDriven(wheelInfos[i].wheelEnd, motorWheelDrive))
+                    {
+                        wheelInfos[i].wheelCollider.motorTorque = motorIn * torqueMotor * currentSpeedFraction;
+                    }
                 }
             }
         }
@@ -463,6 +531,8 @@ public class CarMovement : MonoBehaviour
 
         wheelBrakeModels[2].transform.Rotate(0, -180, 0);
         wheelBrakeModels[3].transform.Rotate(0, -180, 0);
+
+        //rb.AddForce(linearDamping * rb.linearVelocity.magnitude * rb.linearVelocity * -1);
 
         firstFrame = false;
     }

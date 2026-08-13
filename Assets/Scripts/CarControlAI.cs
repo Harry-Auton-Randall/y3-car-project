@@ -93,7 +93,7 @@ public class CarControlAI : MonoBehaviour
     float targetSpeed;
     float speedLimit = 999;
     float turningDistTotal;
-    public float brakingSpeed;
+    float brakingSpeed = 11;
 
     Transform targetWaypointRandomPos;
     public float waypointOffsetMult = 1f;
@@ -118,17 +118,6 @@ public class CarControlAI : MonoBehaviour
         frontWheelMidpointDefaultPos = frontWheelMidpoint.localPosition;
 
         //waypointDirectionTransform = new GameObject("AiCarWaypointDirection").transform;
-    }
-    void Start()
-    {
-        if (carMovement.newBraking)
-        {
-            brakingSpeed = 11;
-        }
-        else
-        {
-            brakingSpeed = 8;
-        }
     }
 
     public void UpdateWaypoint(Collider newCurrentWaypoint)
