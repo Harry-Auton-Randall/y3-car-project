@@ -555,6 +555,7 @@ GameObject:
   - component: {fileID: 7771842000746155582}
   - component: {fileID: 8948032923059320092}
   - component: {fileID: 6562416408479173078}
+  - component: {fileID: 572611348159570607}
   m_Layer: 7
   m_Name: CarTemplate
   m_TagString: Untagged
@@ -668,6 +669,23 @@ MonoBehaviour:
   lapTimeCurrent: 0
   lapTimeTotal: 0
   lapTimeBest: 0
+--- !u!114 &572611348159570607
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7826984790248136044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 318f5e456ab4d854395464bb99fbb0bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Rb_Buoyancy
+  dragWater: 2
+  dragRotWater: 2
+  buoyancyChangeRate: 0.1
+  buoyancyEmpty: 0.25
+  buoyancyFull: -1
 --- !u!1 &8290589737701874446
 GameObject:
   m_ObjectHideFlags: 0

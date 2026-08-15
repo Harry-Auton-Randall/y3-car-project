@@ -68,7 +68,6 @@ public class CarMovement : MonoBehaviour
 
     float maxSpeed = 90.0f;
     float maxSpeedReverse = 15.0f;
-    float linearDamping;
 
     bool boostOverheat;
 
@@ -192,8 +191,6 @@ public class CarMovement : MonoBehaviour
         int brakeDrivenWheelsCount = wheelInfos.Count(x => IsWheelDriven(x.wheelEnd, brakeWheelDrive));
         torqueMotor = torqueMotorTotal / motorDrivenWheelsCount;
         torqueBrake = torqueBrakeTotal / brakeDrivenWheelsCount;
-
-        linearDamping = (torqueMotorTotal / wheelInfos[0].wheelCollider.radius) / (maxSpeed * maxSpeed);
 
         waypointLayer = LayerMask.NameToLayer("Waypoint");
         carMask = (1 << LayerMask.NameToLayer("Car"));
@@ -531,8 +528,6 @@ public class CarMovement : MonoBehaviour
 
         wheelBrakeModels[2].transform.Rotate(0, -180, 0);
         wheelBrakeModels[3].transform.Rotate(0, -180, 0);
-
-        //rb.AddForce(linearDamping * rb.linearVelocity.magnitude * rb.linearVelocity * -1);
 
         firstFrame = false;
     }
