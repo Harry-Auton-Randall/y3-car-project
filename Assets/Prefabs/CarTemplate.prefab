@@ -630,15 +630,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8dffae8dbcd77684794d757c76e78bff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CarMovement
-  gradualSteering: 0
-  steerSpeedMax: 10
-  steerSpeedMin: 2
-  newSteerFalloff: 0
-  newSuspension: 1
-  newSuspensionMult: 2
+  steerRangeFalloffAtSpeed: 1
   steerRange: 30
-  steerRangeMin: 0.3
+  steerRangeMinMult: 0.05
   isPlayer: 0
+  boostMult: 1
   nextWaypoints: []
   motorIn: 0
   steerIn: 0
@@ -649,18 +645,30 @@ MonoBehaviour:
     wheelCollider: {fileID: 7369945159669932042}
     wheelModel: {fileID: 127592729143310490}
     brakeModel: {fileID: 8516227830628670266}
+    steerable: 1
+    motorTractionMult: 0
+    brakeTractionMult: 0
   - wheelEnd: 0
     wheelCollider: {fileID: 6608090417052232539}
     wheelModel: {fileID: 8770075631457275571}
     brakeModel: {fileID: 1035658229335108883}
+    steerable: 1
+    motorTractionMult: 0
+    brakeTractionMult: 0
   - wheelEnd: 1
     wheelCollider: {fileID: 6925739578596097882}
     wheelModel: {fileID: 3098314338114135207}
     brakeModel: {fileID: 6707434928237332231}
+    steerable: 0
+    motorTractionMult: 0
+    brakeTractionMult: 0
   - wheelEnd: 1
     wheelCollider: {fileID: 5589835038376746533}
     wheelModel: {fileID: 7747327295202379462}
     brakeModel: {fileID: 2048854013433177446}
+    steerable: 0
+    motorTractionMult: 0
+    brakeTractionMult: 0
   respawnTimeTotal: 3
   lapPub: 0
   lapWaypointPub: 0

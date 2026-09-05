@@ -6,13 +6,24 @@ using System.Linq;
     public CarMovement.WheelEnd wheelEnd;
     public WheelCollider wheelCollider;
     public Transform wheelModel, brakeModel;
+    public bool steerable;
+    public float motorTractionMult;
+    public float brakeTractionMult;
 
-    public WheelInfo(CarMovement.WheelEnd wheelEndIn, WheelCollider wheelColliderIn, Transform wheelModelIn, Transform brakeModelIn)
-    {
+    public WheelInfo(
+        CarMovement.WheelEnd wheelEndIn, 
+        WheelCollider wheelColliderIn, 
+        Transform wheelModelIn, 
+        Transform brakeModelIn, 
+        bool steerableIn
+    ){
         wheelEnd = wheelEndIn;
         wheelCollider = wheelColliderIn;
         wheelModel = wheelModelIn;
         brakeModel = brakeModelIn;
+        steerable = steerableIn;
+        motorTractionMult = 1;
+        brakeTractionMult = 1;
     }
 }
 
@@ -36,22 +47,7 @@ public class CarMovement : MonoBehaviour
 
     //NEW HANDLING STUFF
 
-    //Gradual steering
-    public bool gradualSteering = true;
-    public float steerSpeedMax = 6;
-    public float steerSpeedMin = 1.5f;
-    float steerSpeed;
-    float steerGrad;
-
-    //Different steerRangeFraction falloff
-    public bool newSteerFalloff = true;
-
-    //New braking
-    //public bool newBraking = true;
-
-    //New suspension
-    public bool newSuspension = true;
-    public float newSuspensionMult = 2;
+    public bool steerRangeFalloffAtSpeed = true;
 
     //Car stats
     float torqueMotor;
@@ -62,13 +58,15 @@ public class CarMovement : MonoBehaviour
     WheelDrive brakeWheelDrive = WheelDrive.All;
 
     public float steerRange = 30.0f;
-    public float steerRangeMin = 0.3f;
+    public float steerRangeMinMult = 0.05f;
 
     public bool isPlayer;
 
     float maxSpeed = 90.0f;
     float maxSpeedReverse = 15.0f;
 
+    public float boostMult = 1;
+    float boostMultCurrent;
     bool boostOverheat;
 
     Collider currentWaypoint;
@@ -76,8 +74,6 @@ public class CarMovement : MonoBehaviour
     Vector3 resetPosition = new Vector3(0, 3, 0);
     Quaternion resetRotation = Quaternion.identity;
     int waypointLayer;
-
-    //public Collider startWaypoint; - NO LONGER NEEDED
 
     //Current variables
     public float motorIn, steerIn;
@@ -92,6 +88,7 @@ public class CarMovement : MonoBehaviour
     Transform[] wheelModels;
     Transform[] wheelBrakeModels;
     public WheelInfo[] wheelInfos;
+    WheelInfo tempWI;
 
     //For the wheels
     Vector3 wheelPos;
@@ -104,7 +101,7 @@ public class CarMovement : MonoBehaviour
     LayerMask carMask;
     int carCollisions;
 
-    LapManager lapManager; //NEW
+    LapManager lapManager;
 
     //Lap stuff
     int lap = 1;
@@ -140,17 +137,6 @@ public class CarMovement : MonoBehaviour
 
     void Awake()
     {
-        if (newSteerFalloff)
-        {
-            steerRangeMin = 0.05f;
-        }
-
-        //if (newBraking)
-        //{
-        //    torqueBrake = 1500f;
-        //}
-
-
         rb = GetComponent<Rigidbody>();
 
         audioSource = transform.Find("EngineAudio").GetComponent<AudioSource>();
@@ -162,30 +148,11 @@ public class CarMovement : MonoBehaviour
         wheelColliders[2] = transform.Find("WheelBackLeftCollider").GetComponent<WheelCollider>();
         wheelColliders[3] = transform.Find("WheelBackRightCollider").GetComponent<WheelCollider>();
 
-        //if (newSuspension)
-        //{
-        //    JointSpring tempSpring;
-        //    for (int i=0;i<wheelColliders.Length;i++)
-        //    {
-        //        tempSpring = wheelColliders[i].suspensionSpring;
-        //        tempSpring.spring *= newSuspensionMult;
-        //        tempSpring.damper *= newSuspensionMult;
-        //        wheelColliders[i].suspensionSpring = tempSpring;
-        //    }
-        //}
-
-        wheelModels = new Transform[4];
-        wheelModels[0] = transform.Find("WheelFrontLeft");
-        wheelModels[1] = transform.Find("WheelFrontRight");
-        wheelModels[2] = transform.Find("WheelBackLeft");
-        wheelModels[3] = transform.Find("WheelBackRight");
-
-        wheelBrakeModels = new Transform[wheelModels.Length];
-        for (int i=0;i<wheelModels.Length;i++)
+        for(int i=0;i<wheelInfos.Length;i++)
         {
-            wheelBrakeModels[i] = wheelModels[i].Find("brake");
+            wheelInfos[i].motorTractionMult = 1;
+            wheelInfos[i].brakeTractionMult = 1;
         }
-
 
         int motorDrivenWheelsCount = wheelInfos.Count(x => IsWheelDriven(x.wheelEnd, motorWheelDrive));
         int brakeDrivenWheelsCount = wheelInfos.Count(x => IsWheelDriven(x.wheelEnd, brakeWheelDrive));
@@ -375,6 +342,30 @@ public class CarMovement : MonoBehaviour
         raceStarted = true;
     }
 
+
+    //Traction control multiplier moves to 0 when slippage is too high, and 1 when otherwise, should hover around desired multiplier
+    public static float AdjustTractionControl(
+        WheelCollider wheel, 
+        float startValue, 
+        float adjustSpeed,
+        bool braking,
+        float delta
+    ){
+        WheelHit hit;
+        if (wheel.GetGroundHit(out hit))
+        {
+            float slip = braking ? hit.forwardSlip * -1 : hit.forwardSlip;
+            float limit = wheel.forwardFriction.extremumSlip;
+
+            if (slip > limit)
+            {
+                return Mathf.MoveTowards(startValue, 0, delta * adjustSpeed);
+            }
+        }
+
+        return Mathf.MoveTowards(startValue, 1, delta * adjustSpeed);
+    }
+
     void FixedUpdate()
     {
         //lapTime
@@ -419,115 +410,111 @@ public class CarMovement : MonoBehaviour
         }
         currentSpeedFraction = 1 - Mathf.Pow(Mathf.Clamp(currentSpeedFraction, 0f, 1f), 1.5f);
 
-        //Finds steerRangeFraction - old version
-        if (!newSteerFalloff)
-        {
-            steerRangeFraction = 1 - Mathf.Lerp(0, (1 - steerRangeMin), (currentSpeed / maxSpeed));
-        }
-        //new version - ((-x)+1)^n, x = currentSpeed / maxSpeed
-        else
+        //steerRangeFraction = (1-x)^2, x = currentSpeed / maxSpeed
+        if (steerRangeFalloffAtSpeed)
         {
             steerRangeFraction = Mathf.Pow((-1 * Mathf.Clamp(currentSpeed / maxSpeed, 0f, 1f)) + 1, 2f);
-            steerRangeFraction = steerRangeMin + (steerRangeFraction * (1 - steerRangeMin));
-            //Debug.Log(steerRangeFraction);
+            steerRangeFraction = Mathf.Lerp(steerRangeMinMult, 1, steerRangeFraction);
         }
-
-        //steerSpeed scales linearly with currentSpeed - max at <=0, min at maxSpeed
-        if (gradualSteering)
-        {
-            steerSpeed = Mathf.Lerp(steerSpeedMin, steerSpeedMax, 1 - Mathf.Clamp(currentSpeed / maxSpeed, 0f, 1f));
-        }
-
-        //Steers front wheels - old version
-        if (!gradualSteering)
-        {
-            wheelColliders[0].steerAngle = steerIn * steerRange * steerRangeFraction;
-            wheelColliders[1].steerAngle = steerIn * steerRange * steerRangeFraction;
-        }
-        //New version - gradually moves steer angle to target instead of instant snapping
         else
         {
-            steerGrad = Mathf.MoveTowards(steerGrad, steerIn, steerSpeed * Time.fixedDeltaTime);
-            wheelColliders[0].steerAngle = steerGrad * steerRange * steerRangeFraction;
-            wheelColliders[1].steerAngle = steerGrad * steerRange * steerRangeFraction;
+            steerRangeFraction = 1;
         }
 
-        //checks if desired direction is opposite to current direction, and that neither current speed or motorIn are 0
-        //If true, cause braking instead of accelerating
-        if (raceStarted)
+        for (int i=0;i<wheelInfos.Length;i++)
         {
-            //if (Mathf.Sign(motorIn) != Mathf.Sign(currentSpeed) && currentSpeed != 0f && motorIn != 0f)
-            //{
-            //    for (int i = 0; i < wheelColliders.Length; i++)
-            //    {
-            //        wheelColliders[i].motorTorque = 0f;
-            //        wheelColliders[i].brakeTorque = Mathf.Abs(motorIn * torqueBrake);
-            //    }
-            //}
-            //else
-            //{
-            //    for (int i = 0; i < wheelColliders.Length; i++)
-            //    {
-            //        wheelColliders[i].motorTorque = motorIn * torqueMotor * currentSpeedFraction;
-            //        wheelColliders[i].brakeTorque = 0f;
-            //    }
-            //}
-            for (int i=0;i<wheelInfos.Length;i++)
+            float steerAnglePrior = wheelInfos[i].wheelCollider.steerAngle;
+
+            //steering
+            if (wheelInfos[i].steerable)
             {
+                wheelInfos[i].wheelCollider.steerAngle = steerIn * steerRange * steerRangeFraction * (
+                    wheelInfos[i].wheelEnd == WheelEnd.Front ? 1
+                  : wheelInfos[i].wheelEnd == WheelEnd.Rear  ? -1
+                                                             : 0
+                );
+            }
+            else
+            {
+                wheelInfos[i].wheelCollider.steerAngle = 0;
+            }
+
+            if (raceStarted)
+            {
+                //torque
+                bool isBraking = (Mathf.Sign(motorIn) != Mathf.Sign(currentSpeed) && currentSpeed != 0f && motorIn != 0f);
+                bool isDrivenMotor = IsWheelDriven(wheelInfos[i].wheelEnd, motorWheelDrive);
+                bool isDrivenBrake = IsWheelDriven(wheelInfos[i].wheelEnd, brakeWheelDrive);
+
                 wheelInfos[i].wheelCollider.motorTorque = 0f;
                 wheelInfos[i].wheelCollider.brakeTorque = 0f;
-                if (Mathf.Sign(motorIn) != Mathf.Sign(currentSpeed) && currentSpeed != 0f && motorIn != 0f)
+                if (isBraking)
                 {
-                    if (IsWheelDriven(wheelInfos[i].wheelEnd, brakeWheelDrive))
+                    if (isDrivenBrake)
                     {
                         wheelInfos[i].wheelCollider.brakeTorque = Mathf.Abs(motorIn * torqueBrake);
                     }
                 }
                 else
                 {
-                    if (IsWheelDriven(wheelInfos[i].wheelEnd, motorWheelDrive))
+                    if (isDrivenMotor)
                     {
                         wheelInfos[i].wheelCollider.motorTorque = motorIn * torqueMotor * currentSpeedFraction;
                     }
                 }
+
+
+                //traction control - it's commented out because it's not very good
+
+                //float tractionAdjustSpeed = 2;
+
+                //if (isBraking && isDrivenBrake)
+                //{
+                //    wheelInfos[i].brakeTractionMult = AdjustTractionControl(
+                //        wheelInfos[i].wheelCollider,
+                //        wheelInfos[i].brakeTractionMult,
+                //        tractionAdjustSpeed,
+                //        true,
+                //        Time.fixedDeltaTime
+                //    );
+
+                //    wheelInfos[i].wheelCollider.brakeTorque *= wheelInfos[i].brakeTractionMult;
+                //}
+                //else
+                //{
+                //    wheelInfos[i].brakeTractionMult = Mathf.MoveTowards(wheelInfos[i].brakeTractionMult, 1, Time.fixedDeltaTime * tractionAdjustSpeed);
+                //}
+
+                //if (!isBraking && isDrivenMotor)
+                //{
+                //    wheelInfos[i].motorTractionMult = AdjustTractionControl(
+                //        wheelInfos[i].wheelCollider,
+                //        wheelInfos[i].motorTractionMult,
+                //        tractionAdjustSpeed,
+                //        false,
+                //        Time.fixedDeltaTime
+                //    );
+
+                //    wheelInfos[i].wheelCollider.motorTorque *= wheelInfos[i].motorTractionMult;
+                //}
+                //else
+                //{
+                //    wheelInfos[i].motorTractionMult = Mathf.MoveTowards(wheelInfos[i].motorTractionMult, 1, Time.fixedDeltaTime * tractionAdjustSpeed);
+                //}
+
+                //
             }
-        }
 
-        //make the wheel meshes match the wheel colliders
-        for (int i = 0; i < wheelColliders.Length; i++)
-        {
-            wheelColliders[i].GetWorldPose(out wheelPos, out wheelRot);
-            wheelModels[i].transform.position = wheelPos;
-            wheelModels[i].transform.rotation = wheelRot;
-            //wheelModels[i].transform.Rotate(0, 0, 90); - NO LONGER NEEDED
+            //meshes
+            wheelInfos[i].wheelCollider.GetWorldPose(out wheelPos, out wheelRot);
+            
+            wheelInfos[i].wheelModel.position = wheelPos;
+            wheelInfos[i].wheelModel.rotation = wheelRot;
 
-            wheelBrakeModels[i].transform.rotation = wheelColliders[i].transform.rotation;
+            wheelInfos[i].brakeModel.position = wheelPos;
+            wheelInfos[i].brakeModel.rotation = wheelInfos[i].wheelCollider.transform.rotation;
+            wheelInfos[i].brakeModel.Rotate(0, wheelInfos[i].wheelModel.localScale.x * (steerAnglePrior + 180), 0);
         }
-
-        //NEW
-        if (firstFrame)
-        {
-            //Debug.Log(this.gameObject.GetInstanceID());
-            //Debug.Log(steerIn * steerRange * steerRangeFraction);
-            wheelBrakeModels[0].transform.Rotate(0, -180, 0);
-            wheelBrakeModels[1].transform.Rotate(0, -180, 0);
-        }
-        else
-        {
-            if (!gradualSteering)
-            {
-                wheelBrakeModels[0].transform.Rotate(0, -(steerIn * steerRange * steerRangeFraction) - 180, 0);
-                wheelBrakeModels[1].transform.Rotate(0, (steerIn * steerRange * steerRangeFraction) - 180, 0);
-            }
-            else
-            {
-                wheelBrakeModels[0].transform.Rotate(0, -(steerGrad * steerRange * steerRangeFraction) - 180, 0);
-                wheelBrakeModels[1].transform.Rotate(0, (steerGrad * steerRange * steerRangeFraction) - 180, 0);
-            }
-        }
-
-        wheelBrakeModels[2].transform.Rotate(0, -180, 0);
-        wheelBrakeModels[3].transform.Rotate(0, -180, 0);
 
         firstFrame = false;
     }
