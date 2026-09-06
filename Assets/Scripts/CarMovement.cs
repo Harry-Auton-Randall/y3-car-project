@@ -78,15 +78,13 @@ public class CarMovement : MonoBehaviour
     //Current variables
     public float motorIn, steerIn;
     public float currentSpeed;
+    float currentSpeedLogic;
 
     float currentSpeedFraction;
     public float steerRangeFraction;
 
     //References to components/children
     Rigidbody rb;
-    WheelCollider[] wheelColliders;
-    Transform[] wheelModels;
-    Transform[] wheelBrakeModels;
     public WheelInfo[] wheelInfos;
     WheelInfo tempWI;
 
@@ -130,8 +128,10 @@ public class CarMovement : MonoBehaviour
     float revs;
     float revsGrad;
     int gear = 0;
-    float[] wheelSpinSpeeds = new float[4]; //NEW
-    float avgWheelSpinSpeed; //NEW
+    float averageWheelLinearVelocity;
+
+    bool areAllWheelsAirborne = false;
+    bool areDrivenWheelsAirborne = false;
 
     bool firstFrame = true;
 
@@ -142,16 +142,11 @@ public class CarMovement : MonoBehaviour
         audioSource = transform.Find("EngineAudio").GetComponent<AudioSource>();
         lapManager = GameObject.Find("/LapManager").GetComponent<LapManager>();
 
-        wheelColliders = new WheelCollider[4];
-        wheelColliders[0] = transform.Find("WheelFrontLeftCollider").GetComponent<WheelCollider>();
-        wheelColliders[1] = transform.Find("WheelFrontRightCollider").GetComponent<WheelCollider>();
-        wheelColliders[2] = transform.Find("WheelBackLeftCollider").GetComponent<WheelCollider>();
-        wheelColliders[3] = transform.Find("WheelBackRightCollider").GetComponent<WheelCollider>();
-
         for(int i=0;i<wheelInfos.Length;i++)
         {
             wheelInfos[i].motorTractionMult = 1;
             wheelInfos[i].brakeTractionMult = 1;
+            wheelInfos[i].wheelCollider.ConfigureVehicleSubsteps(5f, 10, 20);
         }
 
         int motorDrivenWheelsCount = wheelInfos.Count(x => IsWheelDriven(x.wheelEnd, motorWheelDrive));
@@ -231,9 +226,9 @@ public class CarMovement : MonoBehaviour
             transform.position = resetPosition;
             transform.rotation = resetRotation;
 
-            for (int i = 0; i < wheelColliders.Length; i++)
+            for (int i = 0; i < wheelInfos.Length; i++)
             {
-                wheelColliders[i].rotationSpeed = 0f;
+                wheelInfos[i].wheelCollider.rotationSpeed = 0f;
             }
 
             respawnTime = 0;
@@ -392,6 +387,41 @@ public class CarMovement : MonoBehaviour
         nextLapWaypointDist = Vector3.Distance(transform.position,
             nextLapWaypoint.ClosestPoint(transform.position));
 
+
+
+        //Get average wheel linear velocity, and isAirborne
+        averageWheelLinearVelocity = 0;
+        int wheelDrivenCount = 0;
+        areAllWheelsAirborne = true;
+        areDrivenWheelsAirborne = true;
+        for (int i = 0; i < wheelInfos.Length; i++)
+        {
+            if (IsWheelDriven(wheelInfos[i].wheelEnd, motorWheelDrive))
+            {
+                float wheelLinearVelocity = (wheelInfos[i].wheelCollider.radius * wheelInfos[i].wheelCollider.rotationSpeed * Mathf.Deg2Rad);
+
+                averageWheelLinearVelocity += wheelLinearVelocity;
+                wheelDrivenCount++;
+
+                if (wheelInfos[i].wheelCollider.isGrounded)
+                {
+                    areDrivenWheelsAirborne = false;
+                }
+            }
+            if (wheelInfos[i].wheelCollider.isGrounded)
+            {
+                areAllWheelsAirborne = false;
+            }
+        }
+        if (wheelDrivenCount != 0)
+        {
+            averageWheelLinearVelocity /= wheelDrivenCount;
+        }
+        if (Mathf.Abs(averageWheelLinearVelocity) < 0.01f)
+        {
+            averageWheelLinearVelocity = 0f;
+        }
+
         //Finds forward speed
         currentSpeed = Vector3.Dot(transform.forward, rb.linearVelocity);
         if (Mathf.Abs(currentSpeed) < 0.01f)
@@ -399,21 +429,26 @@ public class CarMovement : MonoBehaviour
             currentSpeed = 0f;
         }
 
+        currentSpeedLogic = (areDrivenWheelsAirborne)
+            ? averageWheelLinearVelocity
+            : currentSpeed;
+
         //Finds value from 1 to 0 depending on how close currentSpeed is to maxSpeed
-        if (currentSpeed >= 0)
+        if (currentSpeedLogic >= 0)
         {
-            currentSpeedFraction = currentSpeed / maxSpeed;
+            currentSpeedFraction = currentSpeedLogic / maxSpeed;
         }
         else
         {
-            currentSpeedFraction = (currentSpeed / maxSpeedReverse) * -1;
+            currentSpeedFraction = (currentSpeedLogic / maxSpeedReverse) * -1;
         }
-        currentSpeedFraction = 1 - Mathf.Pow(Mathf.Clamp(currentSpeedFraction, 0f, 1f), 1.5f);
+        currentSpeedFraction = Mathf.Clamp(currentSpeedFraction, 0f, 1f);
+        currentSpeedFraction = 1 - Mathf.Pow(currentSpeedFraction, 1.5f);
 
         //steerRangeFraction = (1-x)^2, x = currentSpeed / maxSpeed
         if (steerRangeFalloffAtSpeed)
         {
-            steerRangeFraction = Mathf.Pow((-1 * Mathf.Clamp(currentSpeed / maxSpeed, 0f, 1f)) + 1, 2f);
+            steerRangeFraction = Mathf.Pow((-1 * Mathf.Clamp(currentSpeedLogic / maxSpeed, 0f, 1f)) + 1, 2f);
             steerRangeFraction = Mathf.Lerp(steerRangeMinMult, 1, steerRangeFraction);
         }
         else
@@ -423,7 +458,7 @@ public class CarMovement : MonoBehaviour
 
         for (int i=0;i<wheelInfos.Length;i++)
         {
-            float steerAnglePrior = wheelInfos[i].wheelCollider.steerAngle;
+            
 
             //steering
             if (wheelInfos[i].steerable)
@@ -442,7 +477,7 @@ public class CarMovement : MonoBehaviour
             if (raceStarted)
             {
                 //torque
-                bool isBraking = (Mathf.Sign(motorIn) != Mathf.Sign(currentSpeed) && currentSpeed != 0f && motorIn != 0f);
+                bool isBraking = (Mathf.Sign(motorIn) != Mathf.Sign(currentSpeedLogic) && currentSpeedLogic != 0f && motorIn != 0f);
                 bool isDrivenMotor = IsWheelDriven(wheelInfos[i].wheelEnd, motorWheelDrive);
                 bool isDrivenBrake = IsWheelDriven(wheelInfos[i].wheelEnd, brakeWheelDrive);
 
@@ -506,14 +541,6 @@ public class CarMovement : MonoBehaviour
             }
 
             //meshes
-            wheelInfos[i].wheelCollider.GetWorldPose(out wheelPos, out wheelRot);
-            
-            wheelInfos[i].wheelModel.position = wheelPos;
-            wheelInfos[i].wheelModel.rotation = wheelRot;
-
-            wheelInfos[i].brakeModel.position = wheelPos;
-            wheelInfos[i].brakeModel.rotation = wheelInfos[i].wheelCollider.transform.rotation;
-            wheelInfos[i].brakeModel.Rotate(0, wheelInfos[i].wheelModel.localScale.x * (steerAnglePrior + 180), 0);
         }
 
         firstFrame = false;
@@ -525,49 +552,51 @@ public class CarMovement : MonoBehaviour
         lapWaypointPub = lapWaypoint;
         nextLapWaypointDistPub = nextLapWaypointDist;
 
-        //NEW
-        avgWheelSpinSpeed = 0;
-        for (int i=0;i<4;i++)
+        //WHEEL MESHES
+        for (int i=0;i<wheelInfos.Length;i++)
         {
-            wheelSpinSpeeds[i] = 2 * Mathf.PI * wheelColliders[i].radius 
-                * (wheelColliders[i].rotationSpeed / 360f);
+            float steerAnglePrior = wheelInfos[i].wheelCollider.steerAngle;
 
-            avgWheelSpinSpeed += wheelSpinSpeeds[i];
+            wheelInfos[i].wheelCollider.GetWorldPose(out wheelPos, out wheelRot);
+
+            wheelInfos[i].wheelModel.position = wheelPos;
+            wheelInfos[i].wheelModel.rotation = wheelRot;
+
+            wheelInfos[i].brakeModel.position = wheelPos;
+            wheelInfos[i].brakeModel.rotation = wheelInfos[i].wheelCollider.transform.rotation;
+            wheelInfos[i].brakeModel.Rotate(0, wheelInfos[i].wheelModel.localScale.x * (steerAnglePrior + 180), 0);
         }
-        avgWheelSpinSpeed /= 4;
 
-        //NEW
-        if (!(wheelColliders[0].isGrounded || wheelColliders[1].isGrounded 
-            || wheelColliders[2].isGrounded || wheelColliders[3].isGrounded))
+        //ENGINE AUDIO
+        if (areDrivenWheelsAirborne)
         {
-            if (avgWheelSpinSpeed >= 0)
+            if (currentSpeedLogic >= 0)
             {
-                revs = (avgWheelSpinSpeed / maxSpeed) * 2;
+                revs = currentSpeedLogic / gearSpeeds[gear];
             }
             else
             {
-                revs = (-avgWheelSpinSpeed / maxSpeedReverse) * 2;
+                revs = (-currentSpeedLogic / maxSpeedReverse) * 2;
             }
         }
-
-        else if (currentSpeed >= 0)
+        else if (currentSpeedLogic >= 0)
         { 
             ShiftGear();
         }
         else
         {
-            revs = (-currentSpeed / maxSpeedReverse) * 2;
+            revs = (-currentSpeedLogic / maxSpeedReverse) * 2;
         }
         revs = Mathf.Clamp(revs, 0f, 2f);
 
         revsGrad = Mathf.MoveTowards(revsGrad, revs, 10 * Time.deltaTime);
 
-        audioSource.pitch = 0.25f + (revsGrad * 0.75f); //CHANGED
+        audioSource.pitch = 0.25f + (revsGrad * 0.75f);
     }
 
     void ShiftGear()
     {
-        revs = currentSpeed / gearSpeeds[gear];
+        revs = currentSpeedLogic / gearSpeeds[gear];
         if (gear != 0 && revs < (0.6f))
         {
             gear -= 1;
