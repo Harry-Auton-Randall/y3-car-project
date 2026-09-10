@@ -53,7 +53,7 @@ public class PlayerHudManager : MonoBehaviour
         }
 
         //set speed text (converts from m/s to mph)
-        speedText.text = (Mathf.Floor(carMovement.currentSpeed * 2.23694f) + "mph");
+        speedText.text = carMovement.currentSpeed+"";// (Mathf.Floor(carMovement.currentSpeed * 2.23694f) + "mph");
 
         //set lap text
         lapText.text = ("Lap " + carMovement.lapPub + " / " + totalLaps);

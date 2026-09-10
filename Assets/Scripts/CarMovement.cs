@@ -27,9 +27,43 @@ using System.Linq;
     }
 }
 
+[System.Serializable] public struct GearInfo
+{
+    public float idealSpeed;
+    public float minFalloffEnd;
+    public float minFalloffStart;
+    public float maxFalloffStart;
+    public float maxFalloffEnd;
+    public GearInfo(
+        float idealSpeedIn,
+        float a,
+        float b,
+        float c,
+        float d
+    ){
+        idealSpeed = idealSpeedIn;
+        minFalloffEnd = a;
+        minFalloffStart = b;
+        maxFalloffStart = c;
+        maxFalloffEnd = d;
+    }
+    public float GetFalloff(float speed)
+    {
+        if (speed > minFalloffStart)
+        {
+            return Mathf.InverseLerp(maxFalloffEnd, maxFalloffStart, speed);
+        }
+        else
+        {
+            return Mathf.InverseLerp(minFalloffEnd, minFalloffStart, speed);
+        }
+    }
+
+}
+
 public class CarMovement : MonoBehaviour
 {
-    public enum WheelDrive { Front, Rear, All};
+    public enum WheelDrive { Front, Rear, All };
     public enum WheelEnd { Front, Rear, None };
     public static bool IsWheelDriven(WheelEnd wheelRow, WheelDrive wheelDrive)
     {
@@ -44,6 +78,8 @@ public class CarMovement : MonoBehaviour
                 return wheelDrive == WheelDrive.Rear || wheelDrive == WheelDrive.All;
         }
     }
+
+    public enum GearShiftMethod { Auto, Manual, Manual_With_Clutch };
 
     //NEW HANDLING STUFF
 
@@ -125,6 +161,7 @@ public class CarMovement : MonoBehaviour
     //Sfx stuff
     AudioSource audioSource;
     float[] gearSpeeds = new float[] { 3.4992f, 5.832f, 9.72f, 16.2f, 27, 45 };
+    GearInfo[] gearInfos;
     float revs;
     float revsGrad;
     int gear = 0;
@@ -153,6 +190,18 @@ public class CarMovement : MonoBehaviour
         int brakeDrivenWheelsCount = wheelInfos.Count(x => IsWheelDriven(x.wheelEnd, brakeWheelDrive));
         torqueMotor = torqueMotorTotal / motorDrivenWheelsCount;
         torqueBrake = torqueBrakeTotal / brakeDrivenWheelsCount;
+
+        //Each gear has falloff between 0 and the gear beneath it (3/5 of its ideal speed),
+        //and between the gear above it (5/3 of its ideal speed) and 2x its ideal speed
+        //Exceptions: gear 0 doesn't fall off at 0, and final gear doesn't fall off at max speed
+        gearInfos = new GearInfo[] {
+            new GearInfo(gearSpeeds[0],     -101,   -100,           gearSpeeds[1],  gearSpeeds[0] * 2),
+            new GearInfo(gearSpeeds[1],     0,      gearSpeeds[0],  gearSpeeds[2],  gearSpeeds[1] * 2),
+            new GearInfo(gearSpeeds[2],     0,      gearSpeeds[1],  gearSpeeds[3],  gearSpeeds[2] * 2),
+            new GearInfo(gearSpeeds[3],     0,      gearSpeeds[2],  gearSpeeds[4],  gearSpeeds[3] * 2),
+            new GearInfo(gearSpeeds[4],     0,      gearSpeeds[3],  gearSpeeds[5],  gearSpeeds[4] * 2),
+            new GearInfo(gearSpeeds[5],     0,      gearSpeeds[4],  200,            201),
+        };
 
         waypointLayer = LayerMask.NameToLayer("Waypoint");
         carMask = (1 << LayerMask.NameToLayer("Car"));
