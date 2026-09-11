@@ -52,10 +52,12 @@ using System.Linq;
         if (speed > minFalloffStart)
         {
             return Mathf.InverseLerp(maxFalloffEnd, maxFalloffStart, speed);
+            
         }
         else
         {
-            return Mathf.InverseLerp(minFalloffEnd, minFalloffStart, speed);
+            float x = Mathf.InverseLerp(minFalloffEnd, minFalloffStart, speed);
+            return Mathf.Lerp(0.05f, 1, x);
         }
     }
 
@@ -114,6 +116,7 @@ public class CarMovement : MonoBehaviour
     //Current variables
     public float motorIn, steerIn;
     public float currentSpeed;
+    float averageWheelLinearVelocity;
     float currentSpeedLogic;
 
     float currentSpeedFraction;
@@ -158,14 +161,16 @@ public class CarMovement : MonoBehaviour
     float lapTimePrevious;
     public float lapTimeCurrent, lapTimeTotal, lapTimeBest;
 
-    //Sfx stuff
-    AudioSource audioSource;
+    //Gear stuff (simulation)
+    public GearShiftMethod gearShiftMethod = GearShiftMethod.Auto;
     float[] gearSpeeds = new float[] { 3.4992f, 5.832f, 9.72f, 16.2f, 27, 45 };
     GearInfo[] gearInfos;
+    int currentGear = 0;
+    float gearTorqueMult;
+    //Gear stuff (outputs)
+    AudioSource audioSource;
     float revs;
     float revsGrad;
-    int gear = 0;
-    float averageWheelLinearVelocity;
 
     bool areAllWheelsAirborne = false;
     bool areDrivenWheelsAirborne = false;
@@ -410,6 +415,43 @@ public class CarMovement : MonoBehaviour
         return Mathf.MoveTowards(startValue, 1, delta * adjustSpeed);
     }
 
+    public void ShiftGearUp()
+    {
+        if (gearShiftMethod == GearShiftMethod.Manual ||
+            (gearShiftMethod == GearShiftMethod.Manual_With_Clutch && true))//no clutch yet
+        {
+            if (currentGear != (gearInfos.Length - 1))
+            {
+                currentGear += 1;
+            }
+        }
+    }
+    public void ShiftGearDown()
+    {
+        if (gearShiftMethod == GearShiftMethod.Manual ||
+            (gearShiftMethod == GearShiftMethod.Manual_With_Clutch && true))//no clutch yet
+        {
+            if (currentGear != 0)
+            {
+                currentGear -= 1;
+            }
+        }
+    }
+
+    void ShiftGearAuto()
+    {
+        if (currentGear != 0 && currentSpeedLogic < gearInfos[currentGear].minFalloffStart)
+        {
+            currentGear -= 1;
+            ShiftGearAuto();
+        }
+        else if (currentGear != (gearInfos.Length - 1) && currentSpeedLogic > gearInfos[currentGear].maxFalloffStart)
+        {
+            currentGear += 1;
+            ShiftGearAuto();
+        }
+    }
+
     void FixedUpdate()
     {
         //lapTime
@@ -505,6 +547,17 @@ public class CarMovement : MonoBehaviour
             steerRangeFraction = 1;
         }
 
+        //Gear-changing logic
+        if(gearShiftMethod == GearShiftMethod.Auto)
+        {
+            if (!areDrivenWheelsAirborne)
+            {
+                ShiftGearAuto();
+            }
+        }
+        gearTorqueMult = (currentSpeedLogic < 0) ? 1
+                                                 : gearInfos[currentGear].GetFalloff(currentSpeedLogic);
+
         for (int i=0;i<wheelInfos.Length;i++)
         {
             
@@ -543,7 +596,7 @@ public class CarMovement : MonoBehaviour
                 {
                     if (isDrivenMotor)
                     {
-                        wheelInfos[i].wheelCollider.motorTorque = motorIn * torqueMotor * currentSpeedFraction;
+                        wheelInfos[i].wheelCollider.motorTorque = motorIn * torqueMotor * currentSpeedFraction * gearTorqueMult;
                     }
                 }
 
@@ -617,25 +670,10 @@ public class CarMovement : MonoBehaviour
         }
 
         //ENGINE AUDIO
-        if (areDrivenWheelsAirborne)
-        {
-            if (currentSpeedLogic >= 0)
-            {
-                revs = currentSpeedLogic / gearSpeeds[gear];
-            }
-            else
-            {
-                revs = (-currentSpeedLogic / maxSpeedReverse) * 2;
-            }
-        }
-        else if (currentSpeedLogic >= 0)
-        { 
-            ShiftGear();
-        }
-        else
-        {
-            revs = (-currentSpeedLogic / maxSpeedReverse) * 2;
-        }
+        revs = (currentSpeedLogic < 0)
+            ? (-currentSpeedLogic / maxSpeedReverse) * 2
+            : currentSpeedLogic / gearInfos[currentGear].idealSpeed;
+ 
         revs = Mathf.Clamp(revs, 0f, 2f);
 
         revsGrad = Mathf.MoveTowards(revsGrad, revs, 10 * Time.deltaTime);
@@ -643,18 +681,5 @@ public class CarMovement : MonoBehaviour
         audioSource.pitch = 0.25f + (revsGrad * 0.75f);
     }
 
-    void ShiftGear()
-    {
-        revs = currentSpeedLogic / gearSpeeds[gear];
-        if (gear != 0 && revs < (0.6f))
-        {
-            gear -= 1;
-            ShiftGear();
-        }
-        else if (gear != (gearSpeeds.Length - 1) && revs > (5f / 3f))
-        {
-            gear += 1;
-            ShiftGear();
-        }
-    }
+    
 }
