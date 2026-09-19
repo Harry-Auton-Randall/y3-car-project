@@ -77,7 +77,7 @@ public class CarControlAI : MonoBehaviour
     CarMovement carMovement;
     Rigidbody rb;
 
-    float motorIn;
+    float motorIn, brakeIn;
     float steerIn;
 
     List<UpcomingWaypointInfo> upcomingWaypoints = new List<UpcomingWaypointInfo>();
@@ -183,10 +183,10 @@ public class CarControlAI : MonoBehaviour
 
         if (upcomingWaypoints == null || upcomingWaypoints.Count == 0)
         {
-            motorIn = SetMotor(0, carMovement.currentSpeed);
+            SetPedals(0, carMovement.currentSpeed);
             steerIn = 0;
 
-            carMovement.SetMotorIn(motorIn);
+            carMovement.SetPedals(motorIn, brakeIn);
             carMovement.SetSteerIn(steerIn);
             return;
         }
@@ -311,7 +311,7 @@ public class CarControlAI : MonoBehaviour
         //ACCELERATION
         steeringArc.turnSpeed = CalculateTurningSpeed(steeringArc.turnRadius, upcomingWaypoints[0].script.aiTurnSpeedMult * Mathf.Lerp(lowSkillTurnSpeedMult, 1, aiSkill));
 
-        if (reversing) { motorIn = SetMotor(-speedLimit, carMovement.currentSpeed); }
+        if (reversing) { SetPedals(-speedLimit, carMovement.currentSpeed); }
         else
         {
             float lowestSpeed = speedLimit;
@@ -335,10 +335,10 @@ public class CarControlAI : MonoBehaviour
                 }
             }
 
-            motorIn = SetMotor(lowestSpeed, carMovement.currentSpeed);
+            SetPedals(lowestSpeed, carMovement.currentSpeed);
         }
 
-        carMovement.SetMotorIn(motorIn);
+        carMovement.SetPedals(motorIn, brakeIn);
         carMovement.SetSteerIn(steerIn);
     }
 
@@ -355,14 +355,18 @@ public class CarControlAI : MonoBehaviour
                (desiredAngle / maxAngle);
     }
 
-    static float SetMotor(float desiredSpeed, float currentSpeed)
+    void SetPedals(float desiredSpeed, float currentSpeed)
     {
         float currentRelativeToDesired = currentSpeed - desiredSpeed;
         float proportional = 1;
 
-        return (currentRelativeToDesired > proportional) ? -1 :
-               (currentRelativeToDesired < -proportional) ? 1 :
-               -(currentRelativeToDesired / proportional);
+        float pedalsCombined = 
+            (currentRelativeToDesired > proportional) ? -1 :
+            (currentRelativeToDesired < -proportional) ? 1 :
+            -(currentRelativeToDesired / proportional);
+
+        motorIn = Mathf.Clamp(pedalsCombined, 0, 1);
+        brakeIn = Mathf.Clamp(pedalsCombined, -1, 0) * -1;
     }
 
 

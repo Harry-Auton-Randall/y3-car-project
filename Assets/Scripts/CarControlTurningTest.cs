@@ -140,7 +140,10 @@ public class CarControlTurningTest : MonoBehaviour
             }
 
             //functions
-            carMovement.SetMotorIn(motorIn);
+            carMovement.SetPedals(
+                Mathf.Clamp(motorIn, 0, 1),
+                Mathf.Clamp(motorIn, -1, 0) * -1
+            );
             carMovement.SetSteerIn(steerIn);
 
 
@@ -189,7 +192,10 @@ public class CarControlTurningTest : MonoBehaviour
             steerIn = 0;
 
             //functions
-            carMovement.SetMotorIn(motorIn);
+            carMovement.SetPedals(
+                Mathf.Clamp(motorIn, 0, 1),
+                Mathf.Clamp(motorIn, -1, 0) * -1
+            );
             carMovement.SetSteerIn(steerIn);
         }
     }

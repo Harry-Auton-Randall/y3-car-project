@@ -114,7 +114,8 @@ public class CarMovement : MonoBehaviour
     int waypointLayer;
 
     //Current variables
-    public float motorIn, steerIn;
+    public float motorIn, brakeIn, steerIn;
+    float motorLogic, brakeLogic;
     public float currentSpeed;
     float averageWheelLinearVelocity;
     float currentSpeedLogic;
@@ -167,6 +168,9 @@ public class CarMovement : MonoBehaviour
     GearInfo[] gearInfos;
     int currentGear = 0;
     float gearTorqueMult;
+    bool inReverseGear;
+    bool clutchPressed;
+    bool clutchPressedWithMethod;
     //Gear stuff (outputs)
     AudioSource audioSource;
     float revs;
@@ -180,6 +184,11 @@ public class CarMovement : MonoBehaviour
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
+
+        if(!isPlayer)
+        {
+            gearShiftMethod = GearShiftMethod.Auto;
+        }
 
         audioSource = transform.Find("EngineAudio").GetComponent<AudioSource>();
         lapManager = GameObject.Find("/LapManager").GetComponent<LapManager>();
@@ -261,13 +270,18 @@ public class CarMovement : MonoBehaviour
         }
     }
 
-    public void SetMotorIn(float value)
+    public void SetPedals(float motor, float brake)
     {
-        motorIn = value;
+        motorIn = motor;
+        brakeIn = brake;
     }
     public void SetSteerIn(float value)
     {
         steerIn = value;
+    }
+    public void SetClutch(float value)
+    {
+        clutchPressed = value > 0.9f;
     }
 
     public void ResetPosition()
@@ -418,9 +432,14 @@ public class CarMovement : MonoBehaviour
     public void ShiftGearUp()
     {
         if (gearShiftMethod == GearShiftMethod.Manual ||
-            (gearShiftMethod == GearShiftMethod.Manual_With_Clutch && true))//no clutch yet
+            (gearShiftMethod == GearShiftMethod.Manual_With_Clutch && clutchPressed))
         {
-            if (currentGear != (gearInfos.Length - 1))
+            if (inReverseGear)
+            {
+                currentGear = 0;
+                inReverseGear = false;
+            }
+            else if (currentGear != (gearInfos.Length - 1))
             {
                 currentGear += 1;
             }
@@ -429,9 +448,13 @@ public class CarMovement : MonoBehaviour
     public void ShiftGearDown()
     {
         if (gearShiftMethod == GearShiftMethod.Manual ||
-            (gearShiftMethod == GearShiftMethod.Manual_With_Clutch && true))//no clutch yet
+            (gearShiftMethod == GearShiftMethod.Manual_With_Clutch && clutchPressed))
         {
-            if (currentGear != 0)
+            if (currentGear == 0 && !inReverseGear)
+            {
+                inReverseGear = true;
+            }
+            else if (currentGear != 0)
             {
                 currentGear -= 1;
             }
@@ -454,6 +477,10 @@ public class CarMovement : MonoBehaviour
 
     void FixedUpdate()
     {
+        clutchPressedWithMethod = clutchPressed && gearShiftMethod == GearShiftMethod.Manual_With_Clutch;
+
+
+
         //lapTime
         if (raceStarted)
         {
@@ -555,8 +582,42 @@ public class CarMovement : MonoBehaviour
                 ShiftGearAuto();
             }
         }
-        gearTorqueMult = (currentSpeedLogic < 0) ? 1
-                                                 : gearInfos[currentGear].GetFalloff(currentSpeedLogic);
+
+        //Motor/brake pedal stuff with auto gears
+        if(gearShiftMethod == GearShiftMethod.Auto)
+        {
+            //When going forward, act as normal
+            if (currentSpeedLogic > 0)
+            {
+                motorLogic = motorIn;
+                brakeLogic = brakeIn;
+                inReverseGear = false;
+            }
+            //When going backward, flip the pedals (hold motor to go forwards and brake to go backwards)
+            else if (currentSpeedLogic < 0)
+            {
+                motorLogic = brakeIn;
+                brakeLogic = motorIn;
+                inReverseGear = true;
+            }
+            //When stationary, prioritise whichever pedal has the most input
+            else
+            {
+                motorLogic = Mathf.Abs(motorIn - brakeIn);
+                brakeLogic = 0;
+                inReverseGear = brakeIn > motorIn;
+            }
+
+            if (inReverseGear) { currentGear = 0; }
+        }
+        else
+        {
+            motorLogic = motorIn;
+            brakeLogic = brakeIn;
+        }
+
+        //reverse has no gear falloff, just uses max-speed falloff
+        gearTorqueMult = inReverseGear ? -1 : gearInfos[currentGear].GetFalloff(currentSpeedLogic);
 
         for (int i=0;i<wheelInfos.Length;i++)
         {
@@ -579,25 +640,26 @@ public class CarMovement : MonoBehaviour
             if (raceStarted)
             {
                 //torque
-                bool isBraking = (Mathf.Sign(motorIn) != Mathf.Sign(currentSpeedLogic) && currentSpeedLogic != 0f && motorIn != 0f);
                 bool isDrivenMotor = IsWheelDriven(wheelInfos[i].wheelEnd, motorWheelDrive);
                 bool isDrivenBrake = IsWheelDriven(wheelInfos[i].wheelEnd, brakeWheelDrive);
 
-                wheelInfos[i].wheelCollider.motorTorque = 0f;
-                wheelInfos[i].wheelCollider.brakeTorque = 0f;
-                if (isBraking)
+
+                if (isDrivenMotor && !clutchPressedWithMethod)
                 {
-                    if (isDrivenBrake)
-                    {
-                        wheelInfos[i].wheelCollider.brakeTorque = Mathf.Abs(motorIn * torqueBrake);
-                    }
+                    wheelInfos[i].wheelCollider.motorTorque = motorLogic * torqueMotor * currentSpeedFraction * gearTorqueMult;
                 }
                 else
                 {
-                    if (isDrivenMotor)
-                    {
-                        wheelInfos[i].wheelCollider.motorTorque = motorIn * torqueMotor * currentSpeedFraction * gearTorqueMult;
-                    }
+                    wheelInfos[i].wheelCollider.motorTorque = 0f;
+                }
+
+                if (isDrivenBrake)
+                {
+                    wheelInfos[i].wheelCollider.brakeTorque = Mathf.Abs(brakeLogic * torqueBrake);
+                }
+                else
+                {
+                    wheelInfos[i].wheelCollider.brakeTorque = 0f;
                 }
 
 
@@ -638,11 +700,7 @@ public class CarMovement : MonoBehaviour
                 //{
                 //    wheelInfos[i].motorTractionMult = Mathf.MoveTowards(wheelInfos[i].motorTractionMult, 1, Time.fixedDeltaTime * tractionAdjustSpeed);
                 //}
-
-                //
             }
-
-            //meshes
         }
 
         firstFrame = false;
@@ -670,9 +728,10 @@ public class CarMovement : MonoBehaviour
         }
 
         //ENGINE AUDIO
-        revs = (currentSpeedLogic < 0)
-            ? (-currentSpeedLogic / maxSpeedReverse) * 2
-            : currentSpeedLogic / gearInfos[currentGear].idealSpeed;
+        revs = 
+            clutchPressedWithMethod ? motorLogic * 2
+                    : inReverseGear ? (-currentSpeedLogic / maxSpeedReverse) * 2
+                                    : currentSpeedLogic / gearInfos[currentGear].idealSpeed;
  
         revs = Mathf.Clamp(revs, 0f, 2f);
 
