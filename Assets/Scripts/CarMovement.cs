@@ -164,7 +164,16 @@ public class CarMovement : MonoBehaviour
 
     //Gear stuff (simulation)
     public GearShiftMethod gearShiftMethod = GearShiftMethod.Auto;
-    float[] gearSpeeds = new float[] { 3.4992f, 5.832f, 9.72f, 16.2f, 27, 45 };
+    float[] gearSpeeds = new float[] { //Add 0.5x redline speeds for first and final gear, other code will sort out the rest
+        7.5f, 
+        0, 
+        0, 
+        0, 
+        0, 
+        45 
+    };
+    float shiftUpMult = 5f / 3;
+    float shiftDownMult = 2f / 3;
     GearInfo[] gearInfos;
     int currentGear = 0;
     float gearTorqueMult;
@@ -205,17 +214,25 @@ public class CarMovement : MonoBehaviour
         torqueMotor = torqueMotorTotal / motorDrivenWheelsCount;
         torqueBrake = torqueBrakeTotal / brakeDrivenWheelsCount;
 
-        //Each gear has falloff between 0 and the gear beneath it (3/5 of its ideal speed),
-        //and between the gear above it (5/3 of its ideal speed) and 2x its ideal speed
+        //Fills in all empty gearSpeeds, such that each one is n% more than the last
+        int gsl = gearSpeeds.Length;
+        float gearRatioProportion = Mathf.Pow(gearSpeeds[0] / gearSpeeds[gsl - 1], 1f / (gsl - 1));
+        for (int i = 1; i < gsl - 1; i++)
+        {
+            gearSpeeds[gsl - (i + 1)] = gearSpeeds[gsl - 1] * Mathf.Pow(gearRatioProportion, i);
+        }
+
+        //Each gear has falloff between 0 and (shiftDownMult) of its ideal speed,
+        //and between (shiftUpMult) and 2x its ideal speed
         //Exceptions: gear 0 doesn't fall off at 0, and final gear doesn't fall off at max speed
-        gearInfos = new GearInfo[] {
-            new GearInfo(gearSpeeds[0],     -101,   -100,           gearSpeeds[1],  gearSpeeds[0] * 2),
-            new GearInfo(gearSpeeds[1],     0,      gearSpeeds[0],  gearSpeeds[2],  gearSpeeds[1] * 2),
-            new GearInfo(gearSpeeds[2],     0,      gearSpeeds[1],  gearSpeeds[3],  gearSpeeds[2] * 2),
-            new GearInfo(gearSpeeds[3],     0,      gearSpeeds[2],  gearSpeeds[4],  gearSpeeds[3] * 2),
-            new GearInfo(gearSpeeds[4],     0,      gearSpeeds[3],  gearSpeeds[5],  gearSpeeds[4] * 2),
-            new GearInfo(gearSpeeds[5],     0,      gearSpeeds[4],  200,            201),
-        };
+        gearInfos = new GearInfo[gsl];
+        for(int i=1;i<(gsl - 1); i++)
+        {
+            gearInfos[i] = new GearInfo(gearSpeeds[i], 0, gearSpeeds[i] * shiftDownMult, gearSpeeds[i] * shiftUpMult, gearSpeeds[i] * 2);
+        }
+        gearInfos[0] = new GearInfo(gearSpeeds[0], -101, -100, gearSpeeds[0] * shiftUpMult, gearSpeeds[0] * 2);
+        gearInfos[gsl - 1] = new GearInfo(gearSpeeds[gsl - 1], 0, gearSpeeds[gsl - 1] * shiftDownMult, 2000, 2001);
+
 
         waypointLayer = LayerMask.NameToLayer("Waypoint");
         carMask = (1 << LayerMask.NameToLayer("Car"));
