@@ -28,7 +28,7 @@ public class MainMenuManager : MonoBehaviour
     public GameObject scoreManagerObj; //assign in inspector
 
     //NEW
-    ScoreManager scoreManager;
+    ScoreSavingManager scoreSavingManager;
     TMPro.TextMeshProUGUI trackBestTimeText, trackBestLapText;
 
     float bestLapOut, bestTimeOut;
@@ -92,10 +92,9 @@ public class MainMenuManager : MonoBehaviour
         GetComponent<SettingsPanelManager>().parentReturnFunc = this.ReturnPressed;
 
         //CHANGED
-        scoreManager = GameObject.Find("/ScoreManagerObj(Clone)").
-            GetComponent<ScoreManager>();
+        scoreSavingManager = GameObject.Find("/ScoreManagerObj(Clone)").GetComponent<ScoreSavingManager>();
         //References ScoreManager's array directly, not a copy
-        trackInfos = scoreManager.trackInfos;
+        trackInfos = scoreSavingManager.trackInfos;
 
         //IN START NOW
         DisplayTrackInfo();
@@ -222,12 +221,12 @@ public class MainMenuManager : MonoBehaviour
         if (lapValid)
         {
             lapCountOut = lapInput;
-            scoreManager.FindTimesWithCount(out bestLapOut, out bestTimeOut, 
+            scoreSavingManager.FindTimesWithCount(out bestLapOut, out bestTimeOut, 
                                             lapCountOut, trackInfos[currentTrack].name);
         }
         else
         {
-            scoreManager.FindTimesWithoutCount(out bestLapOut, out bestTimeOut,
+            scoreSavingManager.FindTimesWithoutCount(out bestLapOut, out bestTimeOut,
                                                out lapCountOut, trackInfos[currentTrack].name);
         }
 

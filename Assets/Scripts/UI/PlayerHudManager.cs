@@ -4,7 +4,7 @@ using TMPro;
 public class PlayerHudManager : MonoBehaviour
 {
     CarMovement carMovement;
-    LapManager lapManager;
+    RaceManager raceManager;
     int totalLaps;
 
     TMPro.TextMeshProUGUI positionText, speedText, lapText;
@@ -16,8 +16,8 @@ public class PlayerHudManager : MonoBehaviour
     void Awake()
     {
         carMovement = GetComponent<CarMovement>();
-        lapManager = GameObject.Find("/LapManager").GetComponent<LapManager>();
-        totalLaps = lapManager.totalLaps;
+        raceManager = GameObject.Find("/LapManager").GetComponent<RaceManager>();
+        totalLaps = raceManager.totalLaps;
 
         positionText = transform.Find("HudCanvas/PositionText")
             .GetComponent<TMPro.TextMeshProUGUI>();

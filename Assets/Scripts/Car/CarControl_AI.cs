@@ -44,13 +44,13 @@ using System.Collections.Generic;
     }
     public void UpdateInfo(Transform turnStart)
     {
-        endRelativePos = CarControlAI.CalculateTurningEnd(turnStart, pathingNode);
-        startRelativePos = CarControlAI.CalculateTurningEnd(pathingNode, turnStart);
+        endRelativePos = CarControl_AI.CalculateTurningEnd(turnStart, pathingNode);
+        startRelativePos = CarControl_AI.CalculateTurningEnd(pathingNode, turnStart);
         startRelativePos.x *= -1; //calculated as if the end waypoint is facing backwards
         startRelativePos.z *= -1;
-        turnRadius = CarControlAI.CalculateTurningRadius(startRelativePos);
-        turnAngle = CarControlAI.CalculateTurningAngle(startRelativePos, turnRadius);
-        turnDist = CarControlAI.CalculateTurningCircumference(turnAngle, turnRadius);
+        turnRadius = CarControl_AI.CalculateTurningRadius(startRelativePos);
+        turnAngle = CarControl_AI.CalculateTurningAngle(startRelativePos, turnRadius);
+        turnDist = CarControl_AI.CalculateTurningCircumference(turnAngle, turnRadius);
     }
     public void SetTurnSpeed(float speedIn) { turnSpeed = speedIn; }
     public void SetOffsetDist(float startPoint, float leftLimit, float rightLimit)
@@ -69,7 +69,7 @@ using System.Collections.Generic;
     }
 }
 
-public class CarControlAI : MonoBehaviour
+public class CarControl_AI : MonoBehaviour
 {
     public float aiSkill = 1; //0 = worst, 1 = best
     float lowSkillTurnSpeedMult = 0.75f;

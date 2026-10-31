@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine.SceneManagement;
 
-public class LapManager : MonoBehaviour
+public class RaceManager : MonoBehaviour
 {
     public Collider[] lapWaypoints;
     
@@ -120,11 +120,11 @@ public class LapManager : MonoBehaviour
             if (!carMovements[i].isPlayer)
             {
                 if (cars == 2) {
-                    carMovements[i].GetComponent<CarControlAI>().waypointOffsetMult = 0;
+                    carMovements[i].GetComponent<CarControl_AI>().waypointOffsetMult = 0;
                 } else if (cars == 3) {
-                    carMovements[i].GetComponent<CarControlAI>().waypointOffsetMult = 0.5f;
+                    carMovements[i].GetComponent<CarControl_AI>().waypointOffsetMult = 0.5f;
                 } else {
-                    carMovements[i].GetComponent<CarControlAI>().waypointOffsetMult = 1;
+                    carMovements[i].GetComponent<CarControl_AI>().waypointOffsetMult = 1;
                 }
             }
             carPositions[i] = i;
@@ -216,7 +216,7 @@ public class LapManager : MonoBehaviour
         scoreManagerObj = GameObject.Find("/ScoreManagerObj(Clone)"); //CHANGED
         if (scoreManagerObj != null)
         {
-            scoreManagerObj.GetComponent<ScoreManager>().SaveBestTimes
+            scoreManagerObj.GetComponent<ScoreSavingManager>().SaveBestTimes
                 (out newBestLap, out newBestTotal, totalLaps,
                  bestLapTimes[idIn], totalLapTimes[idIn], trackName);
 

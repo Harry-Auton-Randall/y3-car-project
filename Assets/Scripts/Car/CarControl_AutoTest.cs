@@ -1,7 +1,7 @@
 using UnityEngine;
 //using UnityEngine.InputSystem;
 
-public class CarControlTurningTest : MonoBehaviour
+public class CarControl_AutoTest : MonoBehaviour
 {
     public enum testType { turningRadius, braking };
     public testType test;

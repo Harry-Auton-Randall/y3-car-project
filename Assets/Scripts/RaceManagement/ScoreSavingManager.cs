@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-public class ScoreManager : MonoBehaviour
+public class ScoreSavingManager : MonoBehaviour
 {
     //Moved from MainMenuManager
     public List<TrackInfo> trackInfos = new List<TrackInfo>();

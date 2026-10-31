@@ -139,7 +139,7 @@ public class CarMovement : MonoBehaviour
     LayerMask carMask;
     int carCollisions;
 
-    LapManager lapManager;
+    RaceManager raceManager;
 
     //Lap stuff
     int lap = 1;
@@ -200,7 +200,7 @@ public class CarMovement : MonoBehaviour
         }
 
         audioSource = transform.Find("EngineAudio").GetComponent<AudioSource>();
-        lapManager = GameObject.Find("/LapManager").GetComponent<LapManager>();
+        raceManager = GameObject.Find("/LapManager").GetComponent<RaceManager>();
 
         for(int i=0;i<wheelInfos.Length;i++)
         {
@@ -283,7 +283,7 @@ public class CarMovement : MonoBehaviour
         //If AI-controlled, sends info update to CarControlAI
         if (!isPlayer)
         {
-            GetComponent<CarControlAI>().UpdateWaypoint(this.currentWaypoint);
+            GetComponent<CarControl_AI>().UpdateWaypoint(this.currentWaypoint);
         }
     }
 
@@ -351,12 +351,12 @@ public class CarMovement : MonoBehaviour
                                 }
                                 if (lap == totalLaps && !finished)
                                 {
-                                    lapManager.RegisterFinish(id, lapTimePrevious + lapTimeCurrent, lapTimeBest); //CHANGED
+                                    raceManager.RegisterFinish(id, lapTimePrevious + lapTimeCurrent, lapTimeBest); //CHANGED
                                     finished = true;
                                     
                                     if (isPlayer)
                                     {
-                                        lapManager.DisplayPlayerResults(id); //CHANGED
+                                        raceManager.DisplayPlayerResults(id); //CHANGED
                                         GetComponent<PlayerHudManager>().Disable();
                                     }
                                 }
@@ -369,12 +369,12 @@ public class CarMovement : MonoBehaviour
                                     //NEW
                                     if (isPlayer && !finished)
                                     {
-                                        lapManager.LapUpdateSound();
+                                        raceManager.LapUpdateSound();
                                     }
                                     
                                     if (lap == totalLaps && totalLaps != 1 && isPlayer)
                                     {
-                                        StartCoroutine(lapManager.LastLapAlert()); //CHANGED
+                                        StartCoroutine(raceManager.LastLapAlert()); //CHANGED
                                     }
                                 }
                             }
