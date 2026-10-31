@@ -83,29 +83,40 @@ public class CarMovement : MonoBehaviour
 
     public enum GearShiftMethod { Auto, Manual, Manual_With_Clutch };
 
-    //NEW HANDLING STUFF
-
-    public bool steerRangeFalloffAtSpeed = true;
-
     //Car stats
+    [Header("Stats")]
+    public float torqueMotorTotal;
+    public WheelDrive motorWheelDrive;
     float torqueMotor;
-    float torqueMotorTotal = 4000f;
-    WheelDrive motorWheelDrive = WheelDrive.All;
+    public float torqueBrakeTotal;
+    public WheelDrive brakeWheelDrive;
     float torqueBrake;
-    float torqueBrakeTotal = 6000f;
-    WheelDrive brakeWheelDrive = WheelDrive.All;
 
-    public float steerRange = 30.0f;
-    public float steerRangeMinMult = 0.05f;
+    public float steerRange;
+    public float steerRangeMinMult;
 
-    public bool isPlayer;
+    public float maxSpeed;
+    public float maxSpeedReverse;
 
-    float maxSpeed = 90.0f;
-    float maxSpeedReverse = 15.0f;
-
-    public float boostMult = 1;
+    public float boostMult;
+    public float boostTimeToOverheat;
+    public float boostTimeToCooldown;
     float boostMultCurrent;
+    float boostOverheatProgress;
     bool boostOverheat;
+
+    public WheelInfo[] wheelInfos;
+    WheelInfo tempWI;
+
+    [Tooltip("Add 0.5x redline speeds for first and final gear, other code will sort out the rest")]
+    public float[] gearSpeeds;
+    public float shiftUpMult;
+    public float shiftDownMult;
+
+    [Header("Not Stats")]
+    public bool steerRangeFalloffAtSpeed = true;
+    public bool isPlayer;
+    public GearShiftMethod gearShiftMethod = GearShiftMethod.Auto;
 
     Collider currentWaypoint;
     public Collider[] nextWaypoints;
@@ -116,7 +127,7 @@ public class CarMovement : MonoBehaviour
     //Current variables
     public float motorIn, brakeIn, steerIn;
     float motorLogic, brakeLogic;
-    public float currentSpeed;
+    public float currentSpeed { get; private set; }
     float averageWheelLinearVelocity;
     float currentSpeedLogic;
 
@@ -125,8 +136,6 @@ public class CarMovement : MonoBehaviour
 
     //References to components/children
     Rigidbody rb;
-    public WheelInfo[] wheelInfos;
-    WheelInfo tempWI;
 
     //For the wheels
     Vector3 wheelPos;
@@ -163,17 +172,6 @@ public class CarMovement : MonoBehaviour
     public float lapTimeCurrent, lapTimeTotal, lapTimeBest;
 
     //Gear stuff (simulation)
-    public GearShiftMethod gearShiftMethod = GearShiftMethod.Auto;
-    float[] gearSpeeds = new float[] { //Add 0.5x redline speeds for first and final gear, other code will sort out the rest
-        7.5f, 
-        0, 
-        0, 
-        0, 
-        0, 
-        45 
-    };
-    float shiftUpMult = 5f / 3;
-    float shiftDownMult = 2f / 3;
     GearInfo[] gearInfos;
     int currentGear = 0;
     float gearTorqueMult;

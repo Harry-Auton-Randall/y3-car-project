@@ -557,7 +557,7 @@ GameObject:
   - component: {fileID: 6562416408479173078}
   - component: {fileID: 572611348159570607}
   m_Layer: 7
-  m_Name: CarTemplate
+  m_Name: Sportscar_Angry_Template
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -630,16 +630,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8dffae8dbcd77684794d757c76e78bff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CarMovement
-  steerRangeFalloffAtSpeed: 1
+  torqueMotorTotal: 4000
+  motorWheelDrive: 2
+  torqueBrakeTotal: 6000
+  brakeWheelDrive: 2
   steerRange: 30
   steerRangeMinMult: 0.05
-  isPlayer: 0
-  boostMult: 1
-  nextWaypoints: []
-  motorIn: 0
-  steerIn: 0
-  currentSpeed: 0
-  steerRangeFraction: 0
+  maxSpeed: 90
+  maxSpeedReverse: 15
+  boostMult: 1.4
+  boostTimeToOverheat: 6
+  boostTimeToCooldown: 4.5
   wheelInfos:
   - wheelEnd: 0
     wheelCollider: {fileID: 7369945159669932042}
@@ -669,6 +670,23 @@ MonoBehaviour:
     steerable: 0
     motorTractionMult: 0
     brakeTractionMult: 0
+  gearSpeeds:
+  - 7.5
+  - 0
+  - 0
+  - 0
+  - 0
+  - 45
+  shiftUpMult: 1.6666666
+  shiftDownMult: 0.6666667
+  steerRangeFalloffAtSpeed: 1
+  isPlayer: 0
+  gearShiftMethod: 0
+  nextWaypoints: []
+  motorIn: 0
+  brakeIn: 0
+  steerIn: 0
+  steerRangeFraction: 0
   respawnTimeTotal: 3
   lapPub: 0
   lapWaypointPub: 0
