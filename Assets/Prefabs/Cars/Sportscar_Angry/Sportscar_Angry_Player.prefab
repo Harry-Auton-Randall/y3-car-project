@@ -696,7 +696,7 @@ GameObject:
   m_Component:
   - component: {fileID: 315309564553205220}
   m_Layer: 0
-  m_Name: CameraBase0
+  m_Name: CameraBaseTarget
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1003,7 +1003,7 @@ GameObject:
   - component: {fileID: 1697625218593646081}
   - component: {fileID: 2877451055828686789}
   m_Layer: 0
-  m_Name: CameraBase
+  m_Name: CameraBaseActual
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1219,7 +1219,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7826984790248136044, guid: efe18e6092d986e46a50e2bc08b12e1f, type: 3}
       propertyPath: m_Name
-      value: PlayerCar Variant
+      value: Sportscar_Angry_Player
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1274,7 +1274,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraMovement
   camRotIn: 0
-  camRotSpeed: 18
 --- !u!114 &6680520705945817723
 MonoBehaviour:
   m_ObjectHideFlags: 0

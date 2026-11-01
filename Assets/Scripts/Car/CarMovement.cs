@@ -186,6 +186,9 @@ public class CarMovement : MonoBehaviour
     bool areAllWheelsAirborne = false;
     bool areDrivenWheelsAirborne = false;
 
+    public LayerMask validRoadSurfacesMask { get; private set; }
+    public bool areWheelsTouchingValidSurface { get; private set; }
+
     bool firstFrame = true;
 
     void Awake()
@@ -241,6 +244,8 @@ public class CarMovement : MonoBehaviour
         lapTimeBest = 0;
 
         rb.constraints = RigidbodyConstraints.FreezeAll;
+
+        validRoadSurfacesMask = 1 << LayerMask.NameToLayer("Default");
     }
     //void Start() - NO LONGER NEEDED
     //{
@@ -527,6 +532,7 @@ public class CarMovement : MonoBehaviour
         int wheelDrivenCount = 0;
         areAllWheelsAirborne = true;
         areDrivenWheelsAirborne = true;
+        areWheelsTouchingValidSurface = true;;
         for (int i = 0; i < wheelInfos.Length; i++)
         {
             if (IsWheelDriven(wheelInfos[i].wheelEnd, motorWheelDrive))
@@ -541,9 +547,15 @@ public class CarMovement : MonoBehaviour
                     areDrivenWheelsAirborne = false;
                 }
             }
-            if (wheelInfos[i].wheelCollider.isGrounded)
+            if (wheelInfos[i].wheelCollider.GetGroundHit(out WheelHit hit))
             {
                 areAllWheelsAirborne = false;
+                if (((1 << hit.collider.gameObject.layer) & validRoadSurfacesMask.value) == 0)
+                {
+                    areWheelsTouchingValidSurface = false;
+                }
+            }else{
+                areWheelsTouchingValidSurface = false;
             }
         }
         if (wheelDrivenCount != 0)
