@@ -638,9 +638,10 @@ MonoBehaviour:
   steerRangeMinMult: 0.05
   maxSpeed: 90
   maxSpeedReverse: 15
-  boostMult: 1.4
+  boostMultTorque: 1.4
+  boostMultSpeed: 1.2
   boostTimeToOverheat: 6
-  boostTimeToCooldown: 4.5
+  boostTimeToCooldown: 5
   wheelInfos:
   - wheelEnd: 0
     wheelCollider: {fileID: 7369945159669932042}

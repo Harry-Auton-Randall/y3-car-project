@@ -8,7 +8,7 @@ public class CarControl_Player : MonoBehaviour
 
     InputActionMap carActions;
 
-    InputAction motorAction, brakeAction, steerAction, resetPosAction;
+    InputAction motorAction, brakeAction, steerAction, resetPosAction, boostAction;
     InputAction shiftGearUpAction, shiftGearDownAction, clutchAction;
     InputAction camRotAction;
     Vector2 camAngle;
@@ -22,10 +22,10 @@ public class CarControl_Player : MonoBehaviour
 
         motorAction = carActions.FindAction("Motor");
         brakeAction = carActions.FindAction("Brake");
-
-
         steerAction = carActions.FindAction("Steer");
         resetPosAction = carActions.FindAction("ResetPosition");
+        boostAction = carActions.FindAction("Boost");
+
         camRotAction = carActions.FindAction("CameraRotate");
 
         shiftGearUpAction = carActions.FindAction("ShiftGear_Up");
@@ -70,6 +70,7 @@ public class CarControl_Player : MonoBehaviour
         );
         carMovement.SetSteerIn(steerAction.ReadValue<float>());
         carMovement.SetClutch(clutchAction.ReadValue<float>());
+        carMovement.SetBoost(boostAction.ReadValue<float>());
 
         camAngle = camRotAction.ReadValue<Vector2>();
         if (camAngle.x == 0f && camAngle.y == 0f)

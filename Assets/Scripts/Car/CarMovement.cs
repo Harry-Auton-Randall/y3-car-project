@@ -98,12 +98,15 @@ public class CarMovement : MonoBehaviour
     public float maxSpeed;
     public float maxSpeedReverse;
 
-    public float boostMult;
+    public float boostMultTorque;
+    public float boostMultSpeed;
     public float boostTimeToOverheat;
     public float boostTimeToCooldown;
-    float boostMultCurrent;
     float boostOverheatProgress;
-    bool boostOverheat;
+    public bool hasBoostOverheated { get; private set; }
+    
+    bool isBoostRequested;
+    public bool isBoosting {get; private set; }
 
     public WheelInfo[] wheelInfos;
     WheelInfo tempWI;
@@ -301,7 +304,12 @@ public class CarMovement : MonoBehaviour
     }
     public void SetClutch(float value)
     {
-        clutchPressed = value > 0.9f;
+        clutchPressed = value > 0.5f;
+    }
+
+    public void SetBoost(float value)
+    {
+        isBoostRequested = value > 0.5f;
     }
 
     public void ResetPosition()
@@ -525,6 +533,38 @@ public class CarMovement : MonoBehaviour
         nextLapWaypointDist = Vector3.Distance(transform.position,
             nextLapWaypoint.ClosestPoint(transform.position));
 
+        //BOOSTING
+        bool boostOverheatedPriorState = hasBoostOverheated;
+
+        if(boostOverheatProgress >= 1){
+            hasBoostOverheated = true;
+            if (!boostOverheatedPriorState)
+            {
+                rb.AddRelativeForce(Vector3.up * 4, ForceMode.VelocityChange);
+                float yTorque = Random.Range(-1.0f, 1.0f);
+                yTorque += yTorque > 0 ? 2 : -2;
+                rb.AddRelativeTorque(Vector3.up * yTorque, ForceMode.VelocityChange);
+                rb.AddRelativeTorque(Random.onUnitSphere * (Random.Range(-1f, 1f) > 0 ? 2 : -2), ForceMode.VelocityChange);
+            }
+        }
+
+        isBoosting = 
+            isBoostRequested 
+         && !clutchPressedWithMethod
+         && !inReverseGear
+         && motorIn - brakeIn >= 0.5f
+         && !hasBoostOverheated
+         && raceStarted
+        ;
+
+        boostOverheatProgress = Mathf.Clamp(
+            boostOverheatProgress + ((isBoosting ? 1 / boostTimeToOverheat : -1 / boostTimeToCooldown) * Time.fixedDeltaTime),
+            0, 1
+        );
+        if(boostOverheatProgress == 0)
+        {
+            hasBoostOverheated = false;
+        }
 
 
         //Get average wheel linear velocity, and isAirborne
@@ -581,7 +621,7 @@ public class CarMovement : MonoBehaviour
         //Finds value from 1 to 0 depending on how close currentSpeed is to maxSpeed
         if (currentSpeedLogic >= 0)
         {
-            currentSpeedFraction = currentSpeedLogic / maxSpeed;
+            currentSpeedFraction = currentSpeedLogic / (maxSpeed * (isBoosting ? boostMultSpeed : 1));
         }
         else
         {
@@ -645,7 +685,7 @@ public class CarMovement : MonoBehaviour
 
         //reverse has no gear falloff, just uses max-speed falloff
         gearTorqueMult = inReverseGear ? -1 : gearInfos[currentGear].GetFalloff(currentSpeedLogic);
-
+        
         for (int i=0;i<wheelInfos.Length;i++)
         {
             
@@ -671,9 +711,9 @@ public class CarMovement : MonoBehaviour
                 bool isDrivenBrake = IsWheelDriven(wheelInfos[i].wheelEnd, brakeWheelDrive);
 
 
-                if (isDrivenMotor && !clutchPressedWithMethod)
+                if (isDrivenMotor && !clutchPressedWithMethod && !hasBoostOverheated)
                 {
-                    wheelInfos[i].wheelCollider.motorTorque = motorLogic * torqueMotor * currentSpeedFraction * gearTorqueMult;
+                    wheelInfos[i].wheelCollider.motorTorque = motorLogic * torqueMotor * currentSpeedFraction * gearTorqueMult * (isBoosting ? boostMultTorque : 1);
                 }
                 else
                 {

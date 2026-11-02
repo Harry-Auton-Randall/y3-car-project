@@ -46,9 +46,14 @@ public class CameraMovement : MonoBehaviour
         isTumbling = true;
     }
 
-    void Update()
+    void LateUpdate()
     {
-        if (!cm.areWheelsTouchingValidSurface)
+        if (cm.hasBoostOverheated)
+        {
+            isTumbling = true;
+        }
+        
+        if (!cm.areWheelsTouchingValidSurface || cm.hasBoostOverheated)
         {
             Vector3 moveDir = rb.linearVelocity;
 
@@ -94,6 +99,7 @@ public class CameraMovement : MonoBehaviour
                 camBaseTarget.Rotate(Vector3.right * 90);
                 camBaseTarget.Rotate(Vector3.up * (camRotYIn - camBaseTarget.localEulerAngles.y));
             }
+            camBaseTargetGlobalRot = camBaseTarget.rotation;
         }
 
         float camRotDist = 1.0f - Mathf.Exp(camRotSpeed * -1 * Time.deltaTime);
